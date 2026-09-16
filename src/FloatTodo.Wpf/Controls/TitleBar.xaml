@@ -1,0 +1,126 @@
+<UserControl x:Class="FloatTodo.Wpf.Controls.TitleBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+             mc:Ignorable="d" 
+             Height="38" 
+             Background="Transparent"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <!-- WinUI 3 Style TitleBar Icon Button -->
+        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#1A888888"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#30888888"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- WinUI 3 Style Close Button with Native Red Feedback -->
+        <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Margin" Value="1,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="closeBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="closeBorder" Property="Background" Value="#E81123"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="closeBorder" Property="Background" Value="#C42B1C"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: Drag area with App Icon -->
+        <Border x:Name="DragArea" Grid.Column="0" 
+                Background="Transparent">
+            <Image Source="/FloatTodo.Wpf;component/Assets/app.png" 
+                   Width="18" 
+                   Height="18" 
+                   VerticalAlignment="Center" 
+                   HorizontalAlignment="Left"
+                   Margin="12,0,0,0"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Border>
+
+        <!-- Right: Control buttons with 10px safe margin to avoid Win11 corner clipping -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+            <!-- Settings Button -->
+            <Button x:Name="SettingsButton" 
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    Click="OnSettingsButtonClick" 
+                    ToolTip="偏好设置">
+                <ic:SymbolIcon Symbol="Settings" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" />
+            </Button>
+
+            <!-- Pin Button -->
+            <Button x:Name="PinButton" 
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    Click="OnPinButtonClick" 
+                    ToolTip="保持常驻置顶 (Pin)">
+                <ic:SymbolIcon x:Name="PinIcon" Symbol="Pin" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" />
+            </Button>
+
+            <!-- Minimize Button -->
+            <Button x:Name="MinimizeButton" 
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    Click="OnMinimizeButtonClick" 
+                    ToolTip="收起至托盘">
+                <ic:SymbolIcon Symbol="Subtract" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" />
+            </Button>
+
+            <!-- Close Button -->
+            <Button x:Name="CloseButton" 
+                    Style="{StaticResource TitleBarCloseButtonStyle}"
+                    Click="OnCloseButtonClick" 
+                    ToolTip="关闭窗口 (隐藏至托盘)">
+                <ic:SymbolIcon Symbol="Dismiss" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

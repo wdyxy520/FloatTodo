@@ -1,3 +1,10 @@
 <Solution>
-  <Project Path="FloatTodo.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/FloatTodo.Core/FloatTodo.Core.csproj" />
+    <Project Path="src/FloatTodo.Wpf/FloatTodo.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FloatTodo.Core.Tests/FloatTodo.Core.Tests.csproj" />
+    <Project Path="tests/FloatTodo.Wpf.Tests/FloatTodo.Wpf.Tests.csproj" />
+  </Folder>
 </Solution>

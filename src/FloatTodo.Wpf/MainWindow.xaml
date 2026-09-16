@@ -1,0 +1,179 @@
+<Window x:Class="FloatTodo.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:FloatTodo.Wpf.Controls"
+        xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+        mc:Ignorable="d"
+        Title="FloatTodo" 
+        Icon="Assets/app.ico"
+        Height="560" 
+        Width="320"
+        MinHeight="360" 
+        MinWidth="260"
+        MaxWidth="560"
+        WindowStyle="None"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="CanResize"
+        WindowStartupLocation="Manual"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        MouseEnter="OnWindowMouseEnter"
+        MouseLeave="OnWindowMouseLeave">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" 
+                      ResizeBorderThickness="6" 
+                      GlassFrameThickness="-1" 
+                      CornerRadius="9" 
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid x:Name="RootContainer">
+        <!-- 1. Expanded Panel (Full Window Content) -->
+        <Border x:Name="ExpandedContainer"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="9">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- TitleBar -->
+                <controls:TitleBar x:Name="AppTitleBar" Grid.Row="0"/>
+
+                <!-- 1. Main View (Today + Scratch) -->
+                <Grid x:Name="MainContentGrid" Grid.Row="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="10,2,10,8">
+                            <!-- Section: Today -->
+                            <TextBlock Text="Today" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,5"/>
+
+                            <controls:TodayView x:Name="TodayTasks"/>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- 2. Settings View (Integrated Preferences) -->
+                <Grid x:Name="SettingsContentGrid" Grid.Row="1" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Settings Header with Back Button -->
+                    <DockPanel Grid.Row="0" Margin="14,2,14,10">
+                        <Button x:Name="BtnBackToMain" 
+                                DockPanel.Dock="Left" 
+                                Background="Transparent" 
+                                BorderThickness="0" 
+                                Cursor="Hand" 
+                                Padding="4,2" 
+                                Click="OnBackToMainClick" 
+                                ToolTip="返回待办主视图">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ic:SymbolIcon Symbol="ArrowLeft" FontSize="15" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="偏好设置" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </DockPanel>
+
+                    <!-- Settings Scrollable Content -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="14,0,14,14">
+                            <!-- Section: Theme -->
+                            <TextBlock Text="应用主题模式" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6" 
+                                    Padding="12,10" 
+                                    Margin="0,0,0,14">
+                                <StackPanel>
+                                    <RadioButton x:Name="RadioThemeSystem" GroupName="ThemeGroup" Content="跟随系统 (跟随 Windows 亮暗设置)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnThemeRadioChecked"/>
+                                    <RadioButton x:Name="RadioThemeLight" GroupName="ThemeGroup" Content="浅色模式 (Light)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnThemeRadioChecked"/>
+                                    <RadioButton x:Name="RadioThemeDark" GroupName="ThemeGroup" Content="深色模式 (Dark)" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnThemeRadioChecked"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Section: Appearance & Backdrop -->
+                            <TextBlock Text="背景材质与外观" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6" 
+                                    Padding="12,10" 
+                                    Margin="0,0,0,14">
+                                <StackPanel>
+                                    <RadioButton x:Name="RadioMica" GroupName="BackdropGroup" Content="常规 Mica (Win11 默认壁纸微透)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnBackdropRadioChecked"/>
+                                    <RadioButton x:Name="RadioMicaAlt" GroupName="BackdropGroup" Content="Mica Alt (高对比度微透)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnBackdropRadioChecked"/>
+                                    <RadioButton x:Name="RadioAcrylic" GroupName="BackdropGroup" Content="亚克力 (Acrylic 穿透毛玻璃)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnBackdropRadioChecked"/>
+                                    <RadioButton x:Name="RadioSolid" GroupName="BackdropGroup" Content="经典纯色 (无透明 / Win10 风格)" Foreground="{DynamicResource TextPrimaryBrush}" Checked="OnBackdropRadioChecked"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Section: Window Behavior -->
+                            <TextBlock Text="窗口与交互行为" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6" 
+                                    Padding="12,10" 
+                                    Margin="0,0,0,14">
+                                <StackPanel>
+                                    <CheckBox x:Name="ChkTopmost" Content="保持常驻置顶 (Topmost)" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}" Click="OnSettingTopmostClick"/>
+                                    <CheckBox x:Name="ChkAutoHide" Content="贴边自动收起隐藏 (AutoHide)" Foreground="{DynamicResource TextPrimaryBrush}" Click="OnSettingAutoHideClick"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Section: Storage & Data -->
+                            <TextBlock Text="数据与存储" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6" 
+                                    Padding="12,10">
+                                <StackPanel>
+                                    <TextBlock Text="所有配置与待办便签均存储在本地，纯离线安全运行。" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    <Button x:Name="BtnOpenDataDir" HorizontalAlignment="Left" Padding="10,5" Cursor="Hand" Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" Click="OnOpenDataDirClick">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="打开数据目录" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 2. Left Edge Handle (Visible when Docked to Right & Hidden) -->
+        <controls:EdgeHandle x:Name="LeftHandle"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Stretch"
+                             Visibility="Collapsed"
+                             MouseEnter="OnHandleMouseEnter"
+                             MouseLeave="OnHandleMouseLeave"/>
+
+        <!-- 3. Right Edge Handle (Visible when Docked to Left & Hidden) -->
+        <controls:EdgeHandle x:Name="RightHandle"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Stretch"
+                             Visibility="Collapsed"
+                             MouseEnter="OnHandleMouseEnter"
+                             MouseLeave="OnHandleMouseLeave"/>
+    </Grid>
+</Window>
+
+
