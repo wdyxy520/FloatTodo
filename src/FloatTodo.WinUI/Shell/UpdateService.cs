@@ -43,14 +43,14 @@ public static class UpdateService
     public static string GetCurrentVersionString()
     {
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        return ver != null ? $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}" : "0.3.3";
+        return ver != null ? $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}" : "0.3.4";
     }
 
     public static async Task<UpdateCheckResult> CheckForUpdatesAsync()
     {
         var currentVersionStr = GetCurrentVersionString();
         Version.TryParse(currentVersionStr, out var currentVersion);
-        currentVersion ??= new Version(0, 3, 3);
+        currentVersion ??= new Version(0, 3, 4);
 
         SetStatus(UpdateStatus.Checking);
 

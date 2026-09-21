@@ -40,6 +40,8 @@ internal sealed class WindowPlacementService(MainWindow window, nint hwnd)
 {
     private readonly MonitorService _monitors = new();
     private IReadOnlyList<MonitorDescriptor>? _dragMonitors;
+    private PixelPoint? _dragAnchor;
+    private DockSide _dragSide;
     private int _lastLeft = int.MinValue;
     private int _lastTop = int.MinValue;
 
@@ -56,6 +58,50 @@ internal sealed class WindowPlacementService(MainWindow window, nint hwnd)
         _dragMonitors = null;
         _lastLeft = int.MinValue;
         _lastTop = int.MinValue;
+    }
+
+    public void BeginNativeDrag()
+    {
+        _dragMonitors = _monitors.All();
+        var bounds = Bounds;
+        _lastLeft = bounds.Left;
+        _lastTop = bounds.Top;
+        NativeMethods.GetCursorPos(out var pt);
+        _dragAnchor = new PixelPoint(pt.X - bounds.Left, pt.Y - bounds.Top);
+        _dragSide = window.Settings.Window.DockSide;
+    }
+
+    public unsafe void HandleNativeMoving(nint lParam)
+    {
+        var rect = (NativeMethods.Rect*)lParam;
+        NativeMethods.GetCursorPos(out var pt);
+        var cursor = new PixelPoint(pt.X, pt.Y);
+        var width = rect->Right - rect->Left;
+        var height = rect->Bottom - rect->Top;
+
+        var anchor = _dragAnchor ?? new PixelPoint(cursor.X - rect->Left, cursor.Y - rect->Top);
+        _dragAnchor = anchor;
+
+        var candidate = PixelRect.FromXYWH(cursor.X - anchor.X, cursor.Y - anchor.Y, width, height);
+        var monitor = DockGeometry.SelectTargetMonitor(cursor, candidate, _dragMonitors ?? _monitors.All());
+
+        var placement = DockGeometry.CalculateDockPlacement(cursor, anchor, width, height, monitor, _dragSide);
+        _dragSide = placement.TargetDockSide;
+
+        rect->Left = placement.TargetRect.Left;
+        rect->Top = placement.TargetRect.Top;
+        rect->Right = placement.TargetRect.Right;
+        rect->Bottom = placement.TargetRect.Bottom;
+    }
+
+    public DockSide EndNativeDrag()
+    {
+        _dragMonitors = null;
+        _dragAnchor = null;
+        var side = _dragSide;
+        _lastLeft = int.MinValue;
+        _lastTop = int.MinValue;
+        return side;
     }
 
     public PixelRect Bounds

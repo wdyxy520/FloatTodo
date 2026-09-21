@@ -10,6 +10,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <!-- Project Options -->
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>FloatTodo.WinUI</RootNamespace>
@@ -24,7 +25,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <DefaultLanguage>zh-CN</DefaultLanguage>
-    <Version>0.3.3</Version>
+    <Version>0.3.4</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\app.ico">

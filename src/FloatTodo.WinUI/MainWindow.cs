@@ -87,6 +87,7 @@ public sealed class MainWindow : Window
         if (AppWindow.Presenter is OverlappedPresenter p) p.IsAlwaysOnTop = Main.Topmost;
         _dock?.ResumeFromPreview();
         _ = FadeHostAsync(1, 160);
+        ConfigureInputRegions();
     }
 
     private void SetPreviewLayout(bool preview)
@@ -270,10 +271,30 @@ public sealed class MainWindow : Window
 
     internal void ConfigureInputRegions()
     {
+        if (IsPreviewMode) return;
         var input = Microsoft.UI.Input.InputNonClientPointerSource.GetForWindowId(AppWindow.Id);
         input.ClearAllRegionRects();
-        input.SetRegionRects(Microsoft.UI.Input.NonClientRegionKind.Passthrough,
-            [new(0, 0, AppWindow.Size.Width, AppWindow.Size.Height)]);
+        var handle = CurrentDragHandle;
+        if (handle.IsLoaded && PanelRoot.XamlRoot is not null && handle.ActualWidth > 0 && handle.ActualHeight > 0)
+        {
+            try
+            {
+                var transform = handle.TransformToVisual(PanelRoot);
+                var pos = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+                var scale = PanelRoot.XamlRoot.RasterizationScale;
+                int x = (int)Math.Round(pos.X * scale);
+                int y = (int)Math.Round(pos.Y * scale);
+                int w = (int)Math.Round(handle.ActualWidth * scale);
+                int h = (int)Math.Round(handle.ActualHeight * scale);
+                if (w > 0 && h > 0)
+                {
+                    input.SetRegionRects(Microsoft.UI.Input.NonClientRegionKind.Caption, [new Windows.Graphics.RectInt32(x, y, w, h)]);
+                }
+            }
+            catch
+            {
+            }
+        }
     }
 
     private void OutsideCardPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
@@ -312,6 +333,7 @@ public sealed class MainWindow : Window
         _settingsHeader.Visibility = Visibility.Visible;
         _settingsPage.Visibility = Visibility.Visible;
         _previewView.Visibility = Visibility.Collapsed;
+        ConfigureInputRegions();
     }
 
     public void NavigateToMain()
@@ -323,6 +345,7 @@ public sealed class MainWindow : Window
         _normalHeader.Visibility = Visibility.Visible;
         _normalPage.Visibility = Visibility.Visible;
         _previewView.Visibility = Visibility.Collapsed;
+        ConfigureInputRegions();
     }
 
     private Grid CreateHeader()
@@ -369,6 +392,8 @@ public sealed class MainWindow : Window
 
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(DragHandle, Loc.Get("DragMainHandle"));
         Grid.SetColumn(DragHandle, 1);
+        DragHandle.Loaded += (_, _) => ConfigureInputRegions();
+        DragHandle.SizeChanged += (_, _) => ConfigureInputRegions();
         header.Children.Add(DragHandle);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
@@ -478,6 +503,8 @@ public sealed class MainWindow : Window
         });
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(SettingsDragHandle, Loc.Get("DragSettingsHandle"));
         Grid.SetColumn(SettingsDragHandle, 1);
+        SettingsDragHandle.Loaded += (_, _) => ConfigureInputRegions();
+        SettingsDragHandle.SizeChanged += (_, _) => ConfigureInputRegions();
         header.Children.Add(SettingsDragHandle);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };

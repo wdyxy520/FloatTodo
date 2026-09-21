@@ -26,10 +26,19 @@ internal sealed class DockController : IDisposable
         _edge.Hovered += () => { if (!_intent.IsRunning) _intent.Start(); };
         _poll = window.DispatcherQueue.CreateTimer(); _poll.Interval = TimeSpan.FromMilliseconds(80); _poll.Tick += (_, _) => CheckPointer(); _poll.Start();
         window.PanelRoot.PointerEntered += (_, _) => { _waitForPointerEntry = false; if (!_explicitHide && _session.State == PanelState.Hiding) Show(); _outside = null; };
+        _hook.Filter = (msg, wp, lp) =>
+        {
+            if (msg == 0x216) // WM_MOVING
+            {
+                _placement.HandleNativeMoving(lp);
+                return 1;
+            }
+            return null;
+        };
         _hook.Message += (msg, _, _) =>
         {
-            if (msg == 0x231) { _session.BeginDrag(); _outside = null; }
-            else if (msg == 0x232) { _session.SetSide(_placement.Snap()); Save(); }
+            if (msg == 0x231) { BeginDrag(); _placement.BeginNativeDrag(); _outside = null; }
+            else if (msg == 0x232) { var side = _placement.EndNativeDrag(); EndDrag(side); }
             else if (msg == 0x2E0 || msg == 0x7E) window.DispatcherQueue.TryEnqueue(() => { if (_disposed) return; _placement.Place(Side); if (_hidden) _edge.Show(_placement.Bounds, Side); Save(); });
         };
     }
@@ -55,6 +64,10 @@ internal sealed class DockController : IDisposable
     {
         _session.SetSide(side);
         _outside = null;
+        if (side != DockSide.None)
+        {
+            _placement.Place(side);
+        }
         Save();
     }
     public void SetSide(DockSide side) { _placement.Place(side); _session.SetSide(side); Save(); }
