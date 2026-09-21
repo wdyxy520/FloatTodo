@@ -172,4 +172,32 @@ public class MemoViewModelTests
             System.Globalization.CultureInfo.CurrentUICulture = prevCulture;
         }
     }
+
+    [Fact]
+    public void ReorderModeTogglesAndResetsOnFinishEditOrConvert()
+    {
+        var memo = new MemoViewModel(new Memo
+        {
+            IsChecklist = true,
+            Items = [new() { Text = "item 1", Order = 0 }, new() { Text = "item 2", Order = 1 }]
+        }, () => { }, _ => { }, _ => { });
+
+        Assert.False(memo.IsReordering);
+        Assert.All(memo.Items, item => Assert.False(item.IsReordering));
+
+        memo.ToggleReorderCommand.Execute(null);
+        Assert.True(memo.IsReordering);
+        Assert.All(memo.Items, item => Assert.True(item.IsReordering));
+
+        memo.FinishEditCommand.Execute(null);
+        Assert.False(memo.IsReordering);
+        Assert.All(memo.Items, item => Assert.False(item.IsReordering));
+
+        memo.BeginEditCommand.Execute(null);
+        memo.ToggleReorderCommand.Execute(null);
+        Assert.True(memo.IsReordering);
+
+        memo.ConvertCommand.Execute(null);
+        Assert.False(memo.IsReordering);
+    }
 }

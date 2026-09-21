@@ -97,6 +97,13 @@ public sealed partial class MemoCard : UserControl
         }
 
         AddItemButton.Visibility = _vm is { IsEditing: true, IsChecklist: true } ? Visibility.Visible : Visibility.Collapsed;
+        var isReordering = _vm?.IsReordering == true;
+        ReorderButton.Background = isReordering
+            ? (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"]
+            : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        ReorderIcon.Foreground = isReordering
+            ? (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"]
+            : (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
         _editTransition.SetExpanded(editing);
     }
 
@@ -283,6 +290,18 @@ public sealed partial class MemoCard : UserControl
             flyout.ShowAt(handle);
             e.Handled = true;
         }
+    }
+
+    private void OnDragHandlePointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border)
+            border.Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"];
+    }
+
+    private void OnDragHandlePointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border)
+            border.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
     }
 
     private void FocusItem(ChecklistItemViewModel? item) => DispatcherQueue.TryEnqueue(() =>

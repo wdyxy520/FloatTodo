@@ -33,7 +33,9 @@ public sealed partial class ChecklistItemViewModel : ObservableObject
         }
     }
     public bool IsEditing => _owner.IsEditing;
+    public bool IsReordering => _owner.IsReordering;
     internal void NotifyEditingChanged() => OnPropertyChanged(nameof(IsEditing));
+    internal void NotifyReorderingChanged() => OnPropertyChanged(nameof(IsReordering));
     internal ChecklistItemViewModel(ChecklistItem model, MemoViewModel owner) { Model = model; _owner = owner; }
     [RelayCommand] private void Remove() => _owner.RemoveItem(this);
 }
@@ -49,6 +51,7 @@ public sealed partial class MemoViewModel : ObservableObject
     public ObservableCollection<ChecklistItemViewModel> Items { get; } = [];
     [ObservableProperty] private MemoViewMode viewMode;
     [ObservableProperty] private bool showTitle;
+    [ObservableProperty] private bool isReordering;
     public bool IsEditing => ViewMode == MemoViewMode.Editing;
     public MemoType Type => _model.IsChecklist ? MemoType.Checklist : MemoType.Text;
     public bool IsChecklist => Type == MemoType.Checklist;
@@ -67,7 +70,13 @@ public sealed partial class MemoViewModel : ObservableObject
     partial void OnViewModeChanged(MemoViewMode value)
     {
         OnPropertyChanged(nameof(IsEditing));
+        if (value != MemoViewMode.Editing) IsReordering = false;
         foreach (var item in Items) item.NotifyEditingChanged();
+    }
+    partial void OnIsReorderingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ReorderToggleLabel));
+        foreach (var item in Items) item.NotifyReorderingChanged();
     }
     internal void Changed() => _changed();
     internal void ReorderItemOnCompletionChange(ChecklistItemViewModel item)
@@ -154,6 +163,7 @@ public sealed partial class MemoViewModel : ObservableObject
     [RelayCommand]
     public void FinishEdit()
     {
+        IsReordering = false;
         ViewMode = MemoViewMode.Preview;
         if (IsNew && string.IsNullOrWhiteSpace(Title) && string.IsNullOrWhiteSpace(Text) && Items.All(i => string.IsNullOrWhiteSpace(i.Text))) _delete(this);
         else { IsNew = false; Changed(); }
@@ -164,9 +174,14 @@ public sealed partial class MemoViewModel : ObservableObject
         : (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? "Show Title" : "显示标题");
     partial void OnShowTitleChanged(bool value) { _model.TitleVisible = value; OnPropertyChanged(nameof(TitleToggleLabel)); Changed(); }
     [RelayCommand] private void AddTitle() { ShowTitle = !ShowTitle; _edit(this); }
+    public string ReorderToggleLabel => IsReordering
+        ? (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? "Done Reordering" : "完成排序")
+        : (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? "Reorder Items" : "调整顺序");
+    [RelayCommand] private void ToggleReorder() => IsReordering = !IsReordering;
     [RelayCommand]
     private void Convert()
     {
+        IsReordering = false;
         // Snapshot visible ordering, including completed items, before converting to text.
         _model.Items = new(Items.Select(i => i.Model));
         _model.Convert(); ReloadItems();
