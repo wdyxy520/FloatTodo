@@ -33,6 +33,14 @@ public sealed partial class TodayViewModel : ObservableObject
     [RelayCommand] private void NewChecklist() => Add(true);
     private void Add(bool checklist)
     {
+        var first = Memos.FirstOrDefault();
+        if (first is not null && first.IsEmptyNew)
+        {
+            if (first.IsChecklist != checklist) first.ConvertCommand.Execute(null);
+            Edit(first);
+            return;
+        }
+
         var memo = Wrap(new() { IsChecklist = checklist });
         memo.IsNew = true;
         FinishEditingExcept(); Memos.Insert(0, memo); Edit(memo);

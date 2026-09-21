@@ -160,12 +160,13 @@ public sealed partial class MemoViewModel : ObservableObject
         SortItems();
     }
     [RelayCommand] private void BeginEdit() => _edit(this);
+    public bool IsEmptyNew => IsNew && string.IsNullOrWhiteSpace(Title) && string.IsNullOrWhiteSpace(Text) && Items.All(i => string.IsNullOrWhiteSpace(i.Text));
     [RelayCommand]
     public void FinishEdit()
     {
         IsReordering = false;
         ViewMode = MemoViewMode.Preview;
-        if (IsNew && string.IsNullOrWhiteSpace(Title) && string.IsNullOrWhiteSpace(Text) && Items.All(i => string.IsNullOrWhiteSpace(i.Text))) _delete(this);
+        if (IsEmptyNew) _delete(this);
         else { IsNew = false; Changed(); }
     }
     [RelayCommand] private void Delete() => _delete(this);

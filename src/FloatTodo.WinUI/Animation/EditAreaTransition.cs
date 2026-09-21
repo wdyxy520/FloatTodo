@@ -21,21 +21,49 @@ internal sealed class EditAreaTransition(FrameworkElement area)
         area.Measure(new(double.PositiveInfinity, double.PositiveInfinity));
         var target = expanded ? area.DesiredSize.Height : 0;
         if (first || !area.IsLoaded || !new UISettings().AnimationsEnabled)
-        { area.Height = expanded ? double.NaN : 0; area.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed; return; }
-        area.Height = current;
-        var storyboard = new Storyboard();
-        var animation = new DoubleAnimation
         {
-            From = current, To = target, Duration = new(TimeSpan.FromMilliseconds(170)),
-            EnableDependentAnimation = true, EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            area.Height = expanded ? double.NaN : 0;
+            area.Opacity = expanded ? 1 : 0;
+            area.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
+
+        area.Height = current;
+        var duration = TimeSpan.FromMilliseconds(240);
+        var easing = new CircleEase { EasingMode = EasingMode.EaseOut };
+
+        var storyboard = new Storyboard();
+        var heightAnim = new DoubleAnimation
+        {
+            From = current,
+            To = target,
+            Duration = new(duration),
+            EnableDependentAnimation = true,
+            EasingFunction = easing
         };
-        Storyboard.SetTarget(animation, area); Storyboard.SetTargetProperty(animation, "Height");
-        storyboard.Children.Add(animation); _active = storyboard;
+        Storyboard.SetTarget(heightAnim, area);
+        Storyboard.SetTargetProperty(heightAnim, "Height");
+        storyboard.Children.Add(heightAnim);
+
+        var opacityAnim = new DoubleAnimation
+        {
+            From = area.Opacity,
+            To = expanded ? 1 : 0,
+            Duration = new(expanded ? duration : TimeSpan.FromMilliseconds(160)),
+            EasingFunction = easing
+        };
+        Storyboard.SetTarget(opacityAnim, area);
+        Storyboard.SetTargetProperty(opacityAnim, "Opacity");
+        storyboard.Children.Add(opacityAnim);
+
+        _active = storyboard;
         storyboard.Completed += (_, _) =>
         {
             if (_active != storyboard) return;
-            _active = null; storyboard.Stop();
+            _active = null;
+            storyboard.Stop();
             area.Height = expanded ? double.NaN : 0;
+            area.Opacity = expanded ? 1 : 0;
             area.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
         };
         storyboard.Begin();

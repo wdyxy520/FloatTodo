@@ -171,6 +171,16 @@ public sealed partial class MemoCard : UserControl
                 BodyEditor.Focus(FocusState.Programmatic);
                 BodyEditor.Select(BodyEditor.Text.Length, 0);
             }
+            return;
+        }
+        if (e.Key == VirtualKey.Down && ReferenceEquals(e.OriginalSource, TitleEditor))
+        {
+            if (_vm.IsChecklist && _vm.Items.Count > 0)
+            {
+                e.Handled = true;
+                NavigateToItem(_vm.Items[0], TitleEditor.SelectionStart);
+                return;
+            }
         }
     }
 
@@ -381,10 +391,22 @@ public sealed partial class MemoCard : UserControl
         }
     }
 
-    private void ItemKeyDown(object sender, KeyRoutedEventArgs e)
+    private void NavigateToItem(ChecklistItemViewModel targetItem, int preferredSelectionStart)
+    {
+        if (_editors.TryGetValue(targetItem, out var targetBox))
+        {
+            targetBox.Focus(FocusState.Programmatic);
+            targetBox.Select(Math.Min(preferredSelectionStart, targetBox.Text.Length), 0);
+        }
+        else
+        {
+            FocusItem(targetItem);
+        }
+    }
+
+    private void ItemPreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (sender is not TextBox box || box.DataContext is not ChecklistItemViewModel item || _vm is null) return;
-        var shift = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
         var alt = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Menu).HasFlag(CoreVirtualKeyStates.Down);
 
         if (alt && e.Key == VirtualKey.Up)
@@ -401,27 +423,53 @@ public sealed partial class MemoCard : UserControl
             FocusItem(item);
             return;
         }
-        if (e.Key == VirtualKey.Enter)
+        if (!alt && e.Key == VirtualKey.Up)
         {
-            if (alt || shift)
+            e.Handled = true;
+            var index = _vm.Items.IndexOf(item);
+            if (index > 0)
             {
-                e.Handled = true;
-                var start = box.SelectionStart;
-                var len = box.SelectionLength;
-                var text = box.Text ?? "";
-                var before = text[..start];
-                var after = text[(start + len)..];
-                box.Text = before + "\r\n" + after;
-                box.SelectionStart = start + 2;
-                box.SelectionLength = 0;
+                NavigateToItem(_vm.Items[index - 1], box.SelectionStart);
+            }
+            else if (_vm.ShowTitle && TitleEditor.Visibility == Visibility.Visible)
+            {
+                TitleEditor.Focus(FocusState.Programmatic);
+                TitleEditor.Select(Math.Min(box.SelectionStart, TitleEditor.Text.Length), 0);
             }
             else
             {
-                e.Handled = true;
-                _vm.SplitItem(item, box.SelectionStart, box.SelectionLength);
+                box.Select(0, 0);
             }
             return;
         }
-        else if (e.Key == VirtualKey.Back && !item.HasText && _vm.Items.Count > 1) { _vm.RemoveItem(item); e.Handled = true; }
+        if (!alt && e.Key == VirtualKey.Down)
+        {
+            e.Handled = true;
+            var index = _vm.Items.IndexOf(item);
+            if (index >= 0 && index < _vm.Items.Count - 1)
+            {
+                NavigateToItem(_vm.Items[index + 1], box.SelectionStart);
+            }
+            else
+            {
+                box.Select(box.Text.Length, 0);
+            }
+            return;
+        }
+        if (e.Key == VirtualKey.Enter)
+        {
+            var ctrl = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
+            if (ctrl) return;
+
+            e.Handled = true;
+            _vm.SplitItem(item, box.SelectionStart, box.SelectionLength);
+            return;
+        }
+        if (e.Key == VirtualKey.Back && !item.HasText && _vm.Items.Count > 1)
+        {
+            e.Handled = true;
+            _vm.RemoveItem(item);
+            return;
+        }
     }
 }

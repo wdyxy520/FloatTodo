@@ -17,7 +17,6 @@ public sealed partial class MainPage : Page
     {
         if (_vm is not null)
         {
-            _vm.PropertyChanged -= Changed;
             _vm.Memos.CollectionChanged -= Memos_CollectionChanged;
             _vm = null;
         }
@@ -29,10 +28,8 @@ public sealed partial class MainPage : Page
         _vm = DataContext as TodayViewModel;
         if (_vm is not null)
         {
-            _vm.PropertyChanged += Changed;
             _vm.Memos.CollectionChanged += Memos_CollectionChanged;
         }
-        UpdateCardsListReorder();
     }
     private void Memos_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -47,17 +44,6 @@ public sealed partial class MainPage : Page
         {
             CardsList.ScrollIntoView(CardsList.Items[0]);
         }
-    }
-    private void Changed(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(TodayViewModel.IsEditing)) UpdateCardsListReorder();
-    }
-    private void UpdateCardsListReorder()
-    {
-        var allow = _vm?.IsEditing != true;
-        CardsList.CanReorderItems = allow;
-        CardsList.CanDragItems = allow;
-        CardsList.AllowDrop = allow;
     }
 
     private void CardLoaded(object sender, RoutedEventArgs e)
@@ -74,12 +60,17 @@ public sealed partial class MainPage : Page
 
     private void CardsList_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
     {
+        if (_vm?.IsEditing == true)
+        {
+            e.Cancel = true;
+            return;
+        }
         DragContext.ActiveSource = sender;
     }
 
     private void CardsList_DragEnter(object sender, DragEventArgs e)
     {
-        if (!ReferenceEquals(DragContext.ActiveSource, sender))
+        if (_vm?.IsEditing == true || !ReferenceEquals(DragContext.ActiveSource, sender))
         {
             e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
             e.DragUIOverride.IsCaptionVisible = false;
@@ -90,7 +81,7 @@ public sealed partial class MainPage : Page
 
     private void CardsList_DragOver(object sender, DragEventArgs e)
     {
-        if (!ReferenceEquals(DragContext.ActiveSource, sender))
+        if (_vm?.IsEditing == true || !ReferenceEquals(DragContext.ActiveSource, sender))
         {
             e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
             e.DragUIOverride.IsCaptionVisible = false;

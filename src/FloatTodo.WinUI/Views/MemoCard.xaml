@@ -14,6 +14,14 @@
         <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent" />
         <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent" />
         <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundFocused" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrush" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushSelected" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushSelectedPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushSelectedPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBorderBrushFocused" Color="Transparent" />
     </UserControl.Resources>
     <Grid
         x:Name="Card"
@@ -83,11 +91,6 @@
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
                     Visibility="{Binding IsChecklist, Converter={StaticResource Visible}}">
-                    <ListView.ItemContainerTransitions>
-                        <TransitionCollection>
-                            <ReorderThemeTransition />
-                        </TransitionCollection>
-                    </ListView.ItemContainerTransitions>
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="MinHeight" Value="32" />
@@ -95,6 +98,10 @@
                             <Setter Property="Margin" Value="0" />
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                             <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                            <Setter Property="IsTabStop" Value="False" />
+                            <Setter Property="UseSystemFocusVisuals" Value="False" />
+                            <Setter Property="FocusVisualPrimaryThickness" Value="0" />
+                            <Setter Property="FocusVisualSecondaryThickness" Value="0" />
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
@@ -169,7 +176,8 @@
                                     <Grid Grid.Column="2" VerticalAlignment="Center" Background="Transparent">
                                         <TextBox
                                             x:Name="ItemBox"
-                                            KeyDown="ItemKeyDown"
+                                            AcceptsReturn="False"
+                                            PreviewKeyDown="ItemPreviewKeyDown"
                                             Loaded="ItemLoaded"
                                             PlaceholderText="添加一项…"
                                             Style="{StaticResource InlineEditor}"

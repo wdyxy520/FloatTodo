@@ -24,7 +24,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <DefaultLanguage>zh-CN</DefaultLanguage>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\app.ico">
