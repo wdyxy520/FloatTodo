@@ -13,6 +13,25 @@ namespace FloatTodo.WinUI.Views;
 
 public sealed partial class MemoCard : UserControl
 {
+    public static readonly DependencyProperty ViewModelProperty =
+        DependencyProperty.Register(
+            nameof(ViewModel),
+            typeof(MemoViewModel),
+            typeof(MemoCard),
+            new PropertyMetadata(null, (d, e) => ((MemoCard)d).OnViewModelChanged(e.OldValue as MemoViewModel, e.NewValue as MemoViewModel)));
+
+    public MemoViewModel? ViewModel
+    {
+        get => (MemoViewModel?)GetValue(ViewModelProperty);
+        set => SetValue(ViewModelProperty, value);
+    }
+
+    private void OnViewModelChanged(MemoViewModel? oldVm, MemoViewModel? newVm)
+    {
+        DataContext = newVm;
+        Attach();
+    }
+
     private MemoViewModel? _vm;
     private readonly Animation.EditAreaTransition _editTransition;
     private readonly Dictionary<ChecklistItemViewModel, TextBox> _editors = [];
@@ -37,39 +56,50 @@ public sealed partial class MemoCard : UserControl
         if (_vm is null) return;
         _vm.PropertyChanged -= Update;
         _vm.FocusRequested -= FocusItem;
-        _vm.Items.CollectionChanged -= ItemsChanged;
-        foreach (var i in _vm.Items) i.PropertyChanged -= ItemChanged;
+        _vm.ReuseFeedbackRequested -= OnReuseFeedback;
         _vm = null;
     }
 
     private void Attach()
     {
-        if (_vm == DataContext) return;
+        var target = ViewModel ?? DataContext as MemoViewModel;
+        if (_vm == target) return;
         Detach();
-        _vm = DataContext as MemoViewModel;
+        _vm = target;
         if (_vm is null) return;
         _vm.PropertyChanged += Update;
         _vm.FocusRequested += FocusItem;
-        _vm.Items.CollectionChanged += ItemsChanged;
-        foreach (var i in _vm.Items) i.PropertyChanged += ItemChanged;
+        _vm.ReuseFeedbackRequested += OnReuseFeedback;
         Refresh();
         if (_vm.IsEditing) DispatcherQueue.TryEnqueue(() => FocusItem(_vm?.Items.FirstOrDefault()));
+        Bindings.Update();
     }
 
-    private void ItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    private void OnReuseFeedback()
     {
-        if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Move) return;
-        if (e.OldItems is not null) foreach (ChecklistItemViewModel i in e.OldItems) i.PropertyChanged -= ItemChanged;
-        if (e.NewItems is not null) foreach (ChecklistItemViewModel i in e.NewItems) { i.PropertyChanged -= ItemChanged; i.PropertyChanged += ItemChanged; }
-        Refresh();
-    }
-
-    private void ItemChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ChecklistItemViewModel.HasText))
+        DispatcherQueue.TryEnqueue(() =>
         {
-            if (sender is ChecklistItemViewModel item && _editors.TryGetValue(item, out var box))
-                UpdateItemVisuals(item, box, _vm?.IsEditing == true);
+            if (_vm is null) return;
+            FocusItem(_vm.Items.FirstOrDefault());
+            PlayReuseFeedback();
+        });
+    }
+
+    private void PlayReuseFeedback()
+    {
+        try
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(CardSurface);
+            var compositor = visual.Compositor;
+            var anim = compositor.CreateScalarKeyFrameAnimation();
+            anim.Duration = TimeSpan.FromMilliseconds(300);
+            anim.InsertKeyFrame(0.0f, 1.0f);
+            anim.InsertKeyFrame(0.5f, 0.45f);
+            anim.InsertKeyFrame(1.0f, 1.0f);
+            visual.StartAnimation("Opacity", anim);
+        }
+        catch
+        {
         }
     }
 
@@ -84,49 +114,7 @@ public sealed partial class MemoCard : UserControl
     {
         var editing = _vm?.IsEditing == true;
         Editor.IsTabStop = !editing;
-
-        SetEditing(TitleEditor, editing);
-        SetEditing(BodyEditor, editing);
-
-        foreach (var kvp in _editors)
-        {
-            var item = kvp.Key;
-            var box = kvp.Value;
-            SetEditing(box, editing);
-            UpdateItemVisuals(item, box, editing);
-        }
-
-        AddItemButton.Visibility = _vm is { IsEditing: true, IsChecklist: true } ? Visibility.Visible : Visibility.Collapsed;
-        var isReordering = _vm?.IsReordering == true;
-        ReorderButton.Background = isReordering
-            ? (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"]
-            : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        ReorderIcon.Foreground = isReordering
-            ? (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"]
-            : (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
         _editTransition.SetExpanded(editing);
-    }
-
-    private void UpdateItemVisuals(ChecklistItemViewModel item, TextBox box, bool editing)
-    {
-        // 查找外层单项 Grid 控制整行显示（未编辑状态下隐藏空白项）
-        DependencyObject? parent = box;
-        while (parent is not null && parent is not Grid) parent = VisualTreeHelper.GetParent(parent);
-        if (parent is not null)
-        {
-            var container = VisualTreeHelper.GetParent(parent);
-            if (container is Grid outerRow)
-            {
-                outerRow.Visibility = editing || item.HasText ? Visibility.Visible : Visibility.Collapsed;
-            }
-        }
-    }
-
-    private static void SetEditing(TextBox box, bool editing)
-    {
-        box.IsReadOnly = !editing;
-        box.IsTabStop = editing;
-        box.IsHitTestVisible = editing;
     }
 
     private void OnCardFlyoutOpened(object? sender, object e) => Interop.NativeMethods.ResetCursor();
@@ -157,7 +145,6 @@ public sealed partial class MemoCard : UserControl
         if (e.Key == VirtualKey.Enter &&
             InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down))
         {
-            // Tunnel before TextBox inserts a newline or the checklist splits a row.
             e.Handled = true;
             _vm.FinishEditCommand.Execute(null);
             return;
@@ -201,8 +188,6 @@ public sealed partial class MemoCard : UserControl
         {
             box.PlaceholderText = Shell.Loc.Get("CardAddItemPlaceholder");
             _editors[item] = box;
-            SetEditing(box, _vm?.IsEditing == true);
-            UpdateItemVisuals(item, box, _vm?.IsEditing == true);
 
             if (_pendingFocusItem == item && _vm?.IsEditing == true)
             {
@@ -221,66 +206,6 @@ public sealed partial class MemoCard : UserControl
         if (sender is TextBox box && box.DataContext is ChecklistItemViewModel item) _editors.Remove(item);
     }
 
-    private async void CheckBox_Checked(object sender, RoutedEventArgs e)
-    {
-        if (sender is not CheckBox cb) return;
-        if (!cb.IsLoaded)
-        {
-            cb.Opacity = 0.55;
-            return;
-        }
-
-        try
-        {
-            // 留出打勾矢量路径动画的播放时间（约 200ms）
-            await Task.Delay(200);
-            if (!cb.IsLoaded || cb.IsChecked != true) return;
-
-            var anim = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
-            {
-                From = cb.Opacity,
-                To = 0.55,
-                Duration = TimeSpan.FromMilliseconds(200),
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.CubicEase
-                {
-                    EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut
-                }
-            };
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(anim, cb);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(anim, "Opacity");
-            var sb = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-            sb.Children.Add(anim);
-            sb.Begin();
-        }
-        catch
-        {
-            cb.Opacity = 0.55;
-        }
-    }
-
-    private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-    {
-        if (sender is not CheckBox cb) return;
-        cb.Opacity = 1.0;
-    }
-
-    private void CheckBox_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is CheckBox cb)
-        {
-            if (cb.DataContext is ChecklistItemViewModel item)
-            {
-                cb.Opacity = item.IsCompleted ? 0.55 : 1.0;
-            }
-            cb.DataContextChanged += (s, _) =>
-            {
-                if (s is CheckBox c && c.DataContext is ChecklistItemViewModel it)
-                {
-                    c.Opacity = it.IsCompleted ? 0.55 : 1.0;
-                }
-            };
-        }
-    }
 
     private void EditableItems_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
     {
@@ -353,20 +278,8 @@ public sealed partial class MemoCard : UserControl
         }
     });
 
-
     private void RowLoaded(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement row)
-        {
-            for (DependencyObject? p = row; p is not null; p = VisualTreeHelper.GetParent(p))
-            {
-                if (p is ListViewItem itemContainer)
-                {
-                    Animation.ControlTransitions.Attach(itemContainer);
-                    break;
-                }
-            }
-        }
     }
 
     private void RowUnloaded(object sender, RoutedEventArgs e)

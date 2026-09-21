@@ -89,6 +89,16 @@
    </Setter>
   </Style>
 
+  <Style x:Key="CaptionSplitPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+   <Setter Property="Width" Value="34"/>
+   <Setter Property="CornerRadius" Value="4,0,0,4"/>
+  </Style>
+
+  <Style x:Key="CaptionSplitSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+   <Setter Property="Width" Value="24"/>
+   <Setter Property="CornerRadius" Value="0,4,4,0"/>
+  </Style>
+
   <Style x:Key="CaptionCloseButtonStyle" TargetType="Button">
    <Setter Property="Width" Value="30"/>
    <Setter Property="Height" Value="30"/>

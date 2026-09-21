@@ -23,7 +23,7 @@ internal sealed class PreviewInputController : IDisposable
     {
         _main = main; _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(main);
         _restore.Title = Shell.Loc.Get("PreviewExitTitle");
-        _restore.AppWindow.IsShownInSwitchers = false;
+        try { _restore.AppWindow.IsShownInSwitchers = false; } catch { }
         var presenter = (OverlappedPresenter)_restore.AppWindow.Presenter;
         presenter.SetBorderAndTitleBar(false, false); presenter.IsResizable = false;
         presenter.IsMaximizable = false; presenter.IsMinimizable = false; presenter.IsAlwaysOnTop = true;

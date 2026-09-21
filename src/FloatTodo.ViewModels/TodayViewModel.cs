@@ -13,6 +13,7 @@ public sealed partial class TodayViewModel : ObservableObject
     public void FinishEditingExcept(MemoViewModel? selected = null) { foreach (var memo in Memos.Where(m => m.IsEditing && m != selected).ToArray()) memo.FinishEdit(); }
     [ObservableProperty] private string errorMessage = "";
     public bool IsEditing => Memos.Any(m => m.IsEditing);
+    public bool CanReorderMemos => !IsEditing;
     public TodayViewModel(IEnumerable<Memo> memos)
     {
         foreach (var memo in memos) Memos.Add(Wrap(memo));
@@ -20,7 +21,14 @@ public sealed partial class TodayViewModel : ObservableObject
     private MemoViewModel Wrap(Memo memo)
     {
         var vm = new MemoViewModel(memo, () => SaveRequested?.Invoke(), Edit, Delete);
-        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MemoViewModel.IsEditing)) OnPropertyChanged(nameof(IsEditing)); };
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MemoViewModel.IsEditing))
+            {
+                OnPropertyChanged(nameof(IsEditing));
+                OnPropertyChanged(nameof(CanReorderMemos));
+            }
+        };
         return vm;
     }
     public void Edit(MemoViewModel selected)
@@ -28,7 +36,13 @@ public sealed partial class TodayViewModel : ObservableObject
         foreach (var memo in Memos.Where(m => m != selected && m.IsEditing).ToArray()) memo.FinishEdit();
         selected.ViewMode = MemoViewMode.Editing;
     }
-    private void Delete(MemoViewModel memo) { Memos.Remove(memo); OnPropertyChanged(nameof(IsEditing)); SaveRequested?.Invoke(); }
+    private void Delete(MemoViewModel memo)
+    {
+        Memos.Remove(memo);
+        OnPropertyChanged(nameof(IsEditing));
+        OnPropertyChanged(nameof(CanReorderMemos));
+        SaveRequested?.Invoke();
+    }
     [RelayCommand] private void NewText() => Add(false);
     [RelayCommand] private void NewChecklist() => Add(true);
     private void Add(bool checklist)
@@ -38,13 +52,16 @@ public sealed partial class TodayViewModel : ObservableObject
         {
             if (first.IsChecklist != checklist) first.ConvertCommand.Execute(null);
             Edit(first);
+            first.TriggerReuseFeedback();
             return;
         }
 
+        FinishEditingExcept();
         var memo = Wrap(new() { IsChecklist = checklist });
         memo.IsNew = true;
-        FinishEditingExcept(); Memos.Insert(0, memo); Edit(memo);
         if (checklist) memo.AddItem();
+        Memos.Insert(0, memo);
+        Edit(memo);
         SaveRequested?.Invoke();
     }
     public void MoveMemo(MemoViewModel memo, int targetIndex)

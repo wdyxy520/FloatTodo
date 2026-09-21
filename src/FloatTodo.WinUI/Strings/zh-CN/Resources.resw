@@ -395,6 +395,9 @@
   <data name="BtnAddMemo" xml:space="preserve">
     <value>新建记事</value>
   </data>
+  <data name="BtnAddMemoOptions" xml:space="preserve">
+    <value>更多新建选项</value>
+  </data>
   <data name="MenuAddTextMemo" xml:space="preserve">
     <value>新建便签</value>
   </data>

@@ -158,7 +158,7 @@ public sealed class MainWindow : Window
     {
         Title = Loc.Get("WindowTitle");
         // Set before the first Activate/Show, not only after the content has loaded.
-        AppWindow.IsShownInSwitchers = false;
+        try { AppWindow.IsShownInSwitchers = false; } catch { }
         var appIcoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (System.IO.File.Exists(appIcoPath))
         {
@@ -249,16 +249,13 @@ public sealed class MainWindow : Window
             ConfigureToolWindow();
             if (!IsPreviewMode && e.WindowActivationState == WindowActivationState.Deactivated) { if (!Main.IsDialogOpen && !_isSettingsActive) ViewModel.FinishEditingExcept(); await _save.FlushAsync(); }
         };
-        AppWindow.Closing += async (_, e) =>
+        AppWindow.Closing += (_, _) =>
         {
             if (_closing) return;
-            e.Cancel = true;
-            if (await _save.FlushAsync())
-            {
-                _closing = true;
-                _settingsStore.SaveSettingsImmediately(Settings);
-                DispatcherQueue.TryEnqueue(Close);
-            }
+            _closing = true;
+            Shell.UpdateService.CancelAll();
+            _save.FlushSync();
+            _settingsStore.SaveSettingsImmediately(Settings);
         };
         PanelRoot.Loaded += (_, _) => InitializeShell();
         Closed += (_, _) =>
@@ -306,7 +303,7 @@ public sealed class MainWindow : Window
     }
     private void ConfigureToolWindow()
     {
-        AppWindow.IsShownInSwitchers = false;
+        try { AppWindow.IsShownInSwitchers = false; } catch { }
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         var current = NativeMethods.GetWindowLongPtr(hwnd, -20).ToInt64();
         var next = (current | 0x80L) & ~0x40000L; // TOOLWINDOW, never APPWINDOW
@@ -355,40 +352,117 @@ public sealed class MainWindow : Window
         header.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
 
-        var addBtn = CaptionButton("\uE710", Loc.Get("BtnAddMemo"));
-        addBtn.Click += (_, _) =>
+        MenuFlyout CreateAddFlyout()
         {
-            ViewModel.NewTextCommand.Execute(null);
-            _normalPage?.ScrollToTop();
+            var flyout = new MenuFlyout();
+            var textItem = new MenuFlyoutItem
+            {
+                Text = Loc.Get("MenuAddTextMemo"),
+                Icon = new FontIcon { Glyph = "\uE8C4" }
+            };
+            textItem.Click += async (_, _) =>
+            {
+                ViewModel.NewTextCommand.Execute(null);
+                if (_normalPage is not null) await _normalPage.EnsureAtTopAsync();
+            };
+            var checklistItem = new MenuFlyoutItem
+            {
+                Text = Loc.Get("MenuAddChecklistMemo"),
+                Icon = new FontIcon { Glyph = "\uE73A" }
+            };
+            checklistItem.Click += async (_, _) =>
+            {
+                ViewModel.NewChecklistCommand.Execute(null);
+                if (_normalPage is not null) await _normalPage.EnsureAtTopAsync();
+            };
+            flyout.Items.Add(textItem);
+            flyout.Items.Add(checklistItem);
+            return flyout;
+        }
+
+        var splitContainer = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent)
         };
 
-        var addFlyout = new MenuFlyout();
-        var textItem = new MenuFlyoutItem
+        var addBtn = new Button
         {
-            Text = Loc.Get("MenuAddTextMemo"),
-            Icon = new FontIcon { Glyph = "\uE8C4" }
+            Content = new FontIcon { Glyph = "\uE710", FontSize = 12 },
+            Style = (Style)Application.Current.Resources["CaptionSplitPrimaryButtonStyle"]
         };
-        textItem.Click += (_, _) =>
+        ToolTipService.SetToolTip(addBtn, Loc.Get("BtnAddMemo"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(addBtn, Loc.Get("BtnAddMemo"));
+        addBtn.Click += async (_, _) =>
         {
             ViewModel.NewTextCommand.Execute(null);
-            _normalPage?.ScrollToTop();
+            if (_normalPage is not null) await _normalPage.EnsureAtTopAsync();
         };
-        var checklistItem = new MenuFlyoutItem
-        {
-            Text = Loc.Get("MenuAddChecklistMemo"),
-            Icon = new FontIcon { Glyph = "\uE73A" }
-        };
-        checklistItem.Click += (_, _) =>
-        {
-            ViewModel.NewChecklistCommand.Execute(null);
-            _normalPage?.ScrollToTop();
-        };
-        addFlyout.Items.Add(textItem);
-        addFlyout.Items.Add(checklistItem);
+
+        var addFlyout = CreateAddFlyout();
         addBtn.ContextFlyout = addFlyout;
 
-        Grid.SetColumn(addBtn, 0);
-        header.Children.Add(addBtn);
+        var optionsFlyout = CreateAddFlyout();
+        var optionsBtn = new Button
+        {
+            Content = new FontIcon { Glyph = "\uE70D", FontSize = 8 },
+            Flyout = optionsFlyout,
+            Style = (Style)Application.Current.Resources["CaptionSplitSecondaryButtonStyle"],
+            Opacity = 0,
+            IsHitTestVisible = false,
+            OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(150) }
+        };
+        ToolTipService.SetToolTip(optionsBtn, Loc.Get("BtnAddMemoOptions"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(optionsBtn, Loc.Get("BtnAddMemoOptions"));
+
+        bool isPointerOverContainer = false;
+        bool isFlyoutOpen = false;
+        void UpdateOptionsState()
+        {
+            bool show = isPointerOverContainer || isFlyoutOpen;
+            optionsBtn.Opacity = show ? 1.0 : 0.0;
+            optionsBtn.IsHitTestVisible = show;
+        }
+
+        splitContainer.PointerEntered += (_, _) =>
+        {
+            isPointerOverContainer = true;
+            UpdateOptionsState();
+        };
+        splitContainer.PointerExited += (_, _) =>
+        {
+            isPointerOverContainer = false;
+            UpdateOptionsState();
+        };
+
+        optionsFlyout.Opening += (_, _) =>
+        {
+            isFlyoutOpen = true;
+            UpdateOptionsState();
+        };
+        optionsFlyout.Closed += (_, _) =>
+        {
+            isFlyoutOpen = false;
+            UpdateOptionsState();
+        };
+
+        addFlyout.Opening += (_, _) =>
+        {
+            isFlyoutOpen = true;
+            UpdateOptionsState();
+        };
+        addFlyout.Closed += (_, _) =>
+        {
+            isFlyoutOpen = false;
+            UpdateOptionsState();
+        };
+
+        splitContainer.Children.Add(addBtn);
+        splitContainer.Children.Add(optionsBtn);
+
+        Grid.SetColumn(splitContainer, 0);
+        header.Children.Add(splitContainer);
 
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(DragHandle, Loc.Get("DragMainHandle"));
         Grid.SetColumn(DragHandle, 1);

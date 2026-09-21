@@ -34,4 +34,29 @@ public sealed class MemoSaveCoordinator
         catch (Exception e) { _viewModel.ErrorMessage = Shell.Loc.Get("SaveFailed") + e.Message; return false; }
         finally { _writeGate.Release(); }
     }
+
+    public void FlushSync()
+    {
+        _timer.Stop();
+        if (_writeGate.Wait(TimeSpan.FromMilliseconds(500)))
+        {
+            try
+            {
+                if (_saved == _revision) return;
+                var revision = _revision;
+                var snapshot = _viewModel.Snapshot();
+                _storage.Save(snapshot);
+                _saved = revision;
+                _viewModel.ErrorMessage = "";
+            }
+            catch (Exception e)
+            {
+                _viewModel.ErrorMessage = Shell.Loc.Get("SaveFailed") + e.Message;
+            }
+            finally
+            {
+                _writeGate.Release();
+            }
+        }
+    }
 }

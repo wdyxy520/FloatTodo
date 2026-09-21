@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.DependencyInjection;
 using FloatTodo.Core.Services;
 using FloatTodo.ViewModels;
 using FloatTodo.WinUI.Services;
 using FloatTodo.WinUI.Shell;
+using Microsoft.Extensions.DependencyInjection;
 namespace FloatTodo.WinUI;
 
 public partial class App : Application
@@ -51,38 +53,55 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
-                var failure = new Window
-                {
-                    Title = Loc.Get("AppStartupError"),
-                    Content = new TextBlock
-                    {
-                        Text = Loc.Get("AppCannotReadMemos") + "\n" + ex.Message,
-                        TextWrapping = TextWrapping.Wrap,
-                        Margin = new Thickness(20)
-                    }
-                };
-                failure.Activate();
+                ShowStartupError(Loc.Get("AppCannotReadMemos") + "\n" + ex.Message);
                 return;
             }
 
-            _window = new MainWindow(new TodayViewModel(service.GetMemos()), service, settingsPath);
+            var todayVm = new TodayViewModel(service.GetMemos());
+            var services = new ServiceCollection();
+            services.AddSingleton(settingsStore);
+            services.AddSingleton(service);
+            services.AddSingleton(todayVm);
+            Ioc.Default.ConfigureServices(services.BuildServiceProvider());
+
+            _window = new MainWindow(todayVm, service, settingsPath);
             _instance.Listen(() => _window.DispatcherQueue.TryEnqueue(() => _window.ShowPanel()));
-            _window.Closed += (_, _) => _instance.Dispose();
+            _window.Closed += (_, _) =>
+            {
+                _instance?.Dispose();
+                Exit();
+            };
             _window.Activate();
         }
         catch (Exception error)
         {
-            var failure = new Window
-            {
-                Title = Loc.Get("AppStartupError"),
-                Content = new TextBlock
-                {
-                    Text = error.ToString(),
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(20)
-                }
-            };
-            failure.Activate();
+            ShowStartupError(error.ToString());
         }
+    }
+
+    private void ShowStartupError(string message)
+    {
+        try
+        {
+            var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FloatTodo");
+            Directory.CreateDirectory(logDir);
+            File.WriteAllText(Path.Combine(logDir, "startup_error.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\n{message}");
+        }
+        catch
+        {
+        }
+
+        var failure = new Window
+        {
+            Title = Loc.Get("AppStartupError"),
+            Content = new TextBlock
+            {
+                Text = message,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(20)
+            }
+        };
+        failure.Closed += (_, _) => Exit();
+        failure.Activate();
     }
 }

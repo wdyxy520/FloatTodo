@@ -17,7 +17,7 @@ public sealed partial class ChecklistItemViewModel : ObservableObject
     public string Text
     {
         get => Model.Text;
-        set { if (value == Model.Text) return; Model.Text = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasText)); _owner.Changed(); }
+        set { if (value == Model.Text) return; Model.Text = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasText)); OnPropertyChanged(nameof(IsRowVisible)); _owner.Changed(); }
     }
     public bool HasText => !string.IsNullOrEmpty(Text);
     public bool IsCompleted
@@ -33,8 +33,15 @@ public sealed partial class ChecklistItemViewModel : ObservableObject
         }
     }
     public bool IsEditing => _owner.IsEditing;
+    public bool IsReadOnly => !_owner.IsEditing;
     public bool IsReordering => _owner.IsReordering;
-    internal void NotifyEditingChanged() => OnPropertyChanged(nameof(IsEditing));
+    public bool IsRowVisible => IsEditing || HasText;
+    internal void NotifyEditingChanged()
+    {
+        OnPropertyChanged(nameof(IsEditing));
+        OnPropertyChanged(nameof(IsReadOnly));
+        OnPropertyChanged(nameof(IsRowVisible));
+    }
     internal void NotifyReorderingChanged() => OnPropertyChanged(nameof(IsReordering));
     internal ChecklistItemViewModel(ChecklistItem model, MemoViewModel owner) { Model = model; _owner = owner; }
     [RelayCommand] private void Remove() => _owner.RemoveItem(this);
@@ -53,6 +60,7 @@ public sealed partial class MemoViewModel : ObservableObject
     [ObservableProperty] private bool showTitle;
     [ObservableProperty] private bool isReordering;
     public bool IsEditing => ViewMode == MemoViewMode.Editing;
+    public bool IsReadOnly => ViewMode != MemoViewMode.Editing;
     public MemoType Type => _model.IsChecklist ? MemoType.Checklist : MemoType.Text;
     public bool IsChecklist => Type == MemoType.Checklist;
     public string ConvertHint => IsChecklist
@@ -61,6 +69,8 @@ public sealed partial class MemoViewModel : ObservableObject
     public string Title { get => _model.Title; set { if (Title == value) return; _model.Title = value; OnPropertyChanged(); Changed(); } }
     public string Text { get => _model.Text; set { if (Text == value) return; _model.Text = value; OnPropertyChanged(); Changed(); } }
     public event Action<ChecklistItemViewModel?>? FocusRequested;
+    public event Action? ReuseFeedbackRequested;
+    public void TriggerReuseFeedback() => ReuseFeedbackRequested?.Invoke();
     public MemoViewModel(Memo model, Action changed, Action<MemoViewModel> edit, Action<MemoViewModel> delete)
     {
         _model = model; _changed = changed; _edit = edit; _delete = delete;
@@ -70,6 +80,7 @@ public sealed partial class MemoViewModel : ObservableObject
     partial void OnViewModeChanged(MemoViewMode value)
     {
         OnPropertyChanged(nameof(IsEditing));
+        OnPropertyChanged(nameof(IsReadOnly));
         if (value != MemoViewMode.Editing) IsReordering = false;
         foreach (var item in Items) item.NotifyEditingChanged();
     }
@@ -215,7 +226,7 @@ public sealed partial class MemoViewModel : ObservableObject
         if (Items[target].IsCompleted != item.IsCompleted) return;
         Items.Move(index, target);
         for (int i = 0; i < Items.Count; i++) Items[i].Model.Order = i;
-        SortItems();
+        UpdateDividers();
         Changed();
     }
     public void MoveItemToIndex(ChecklistItemViewModel item, int targetIndex)
@@ -225,7 +236,7 @@ public sealed partial class MemoViewModel : ObservableObject
         if (Items[targetIndex].IsCompleted != item.IsCompleted) return;
         Items.Move(index, targetIndex);
         for (int i = 0; i < Items.Count; i++) Items[i].Model.Order = i;
-        SortItems();
+        UpdateDividers();
         Changed();
     }
     public void SyncOrderAfterReorder()

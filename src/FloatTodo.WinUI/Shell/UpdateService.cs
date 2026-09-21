@@ -25,7 +25,14 @@ public static class UpdateService
         Timeout = TimeSpan.FromSeconds(30)
     };
 
+    private static CancellationTokenSource? _checkCts;
     private static CancellationTokenSource? _downloadCts;
+
+    public static void CancelAll()
+    {
+        try { _checkCts?.Cancel(); } catch { }
+        try { _downloadCts?.Cancel(); } catch { }
+    }
 
     public static event Action<UpdateStatus>? StatusChanged;
     public static event Action<double>? DownloadProgressChanged;
@@ -43,20 +50,26 @@ public static class UpdateService
     public static string GetCurrentVersionString()
     {
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        return ver != null ? $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}" : "0.3.4";
+        return ver != null ? $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}" : "0.3.5";
     }
 
-    public static async Task<UpdateCheckResult> CheckForUpdatesAsync()
+    public static async Task<UpdateCheckResult> CheckForUpdatesAsync(CancellationToken ct = default)
     {
         var currentVersionStr = GetCurrentVersionString();
         Version.TryParse(currentVersionStr, out var currentVersion);
-        currentVersion ??= new Version(0, 3, 4);
+        currentVersion ??= new Version(0, 3, 5);
 
         SetStatus(UpdateStatus.Checking);
 
+        _checkCts?.Cancel();
+        _checkCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var token = _checkCts.Token;
+
         try
         {
-            var json = await _httpClient.GetStringAsync(UpdateChecker.DefaultApiUrl);
+            using var response = await _httpClient.GetAsync(UpdateChecker.DefaultApiUrl, token);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(token);
             var result = UpdateChecker.ParseRelease(json, currentVersion);
             CachedResult = result;
 
@@ -79,6 +92,19 @@ public static class UpdateService
             }
 
             return result;
+        }
+        catch (OperationCanceledException)
+        {
+            SetStatus(UpdateStatus.Idle);
+            return new UpdateCheckResult(
+                HasUpdate: false,
+                LatestVersion: string.Empty,
+                CurrentVersion: currentVersionStr,
+                Changelog: string.Empty,
+                ReleaseUrl: "https://github.com/wdyxy520/FloatTodo/releases",
+                InstallerDownloadUrl: null,
+                MirrorDownloadUrl: null
+            );
         }
         catch (Exception ex)
         {

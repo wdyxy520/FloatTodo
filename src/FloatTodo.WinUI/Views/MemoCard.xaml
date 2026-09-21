@@ -1,7 +1,8 @@
 <UserControl
     x:Class="FloatTodo.WinUI.Views.MemoCard"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:FloatTodo.ViewModels">
     <UserControl.Resources>
         <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
         <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
@@ -28,18 +29,18 @@
         PreviewKeyDown="OnEditorPreviewKeyDown">
         <Grid.ContextFlyout>
             <MenuFlyout Opened="OnCardFlyoutOpened">
-                <MenuFlyoutItem Command="{Binding ConvertCommand}" Text="{Binding ConvertHint}">
+                <MenuFlyoutItem Command="{x:Bind ViewModel.ConvertCommand, Mode=OneWay}" Text="{x:Bind ViewModel.ConvertHint, Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE73A;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
-                <MenuFlyoutItem Command="{Binding AddTitleCommand}" Text="{Binding TitleToggleLabel}">
+                <MenuFlyoutItem Command="{x:Bind ViewModel.AddTitleCommand, Mode=OneWay}" Text="{x:Bind ViewModel.TitleToggleLabel, Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE8D2;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutSeparator />
-                <MenuFlyoutItem x:Uid="DeleteMemoMenuItem" Command="{Binding DeleteCommand}" Text="删除记事">
+                <MenuFlyoutItem x:Uid="DeleteMemoMenuItem" Command="{x:Bind ViewModel.DeleteCommand, Mode=OneWay}" Text="删除记事">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE74D;" />
                     </MenuFlyoutItem.Icon>
@@ -66,21 +67,27 @@
                     FontWeight="SemiBold"
                     PlaceholderText="标题"
                     Style="{StaticResource InlineEditor}"
-                    Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Visibility="{Binding ShowTitle, Converter={StaticResource Visible}}" />
+                    Text="{x:Bind ViewModel.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Visibility="{x:Bind ViewModel.ShowTitle, Mode=OneWay, Converter={StaticResource Visible}}"
+                    IsReadOnly="{x:Bind ViewModel.IsReadOnly, Mode=OneWay}"
+                    IsTabStop="{x:Bind ViewModel.IsEditing, Mode=OneWay}"
+                    IsHitTestVisible="{x:Bind ViewModel.IsEditing, Mode=OneWay}" />
                 <TextBox
                     x:Name="BodyEditor"
                     x:Uid="BodyEditor"
                     PlaceholderText="记一条…"
                     Style="{StaticResource InlineEditor}"
-                    Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Visibility="{Binding IsChecklist, Converter={StaticResource Visible}, ConverterParameter=Invert}" />
+                    Text="{x:Bind ViewModel.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Visibility="{x:Bind ViewModel.IsChecklist, Mode=OneWay, Converter={StaticResource Visible}, ConverterParameter=Invert}"
+                    IsReadOnly="{x:Bind ViewModel.IsReadOnly, Mode=OneWay}"
+                    IsTabStop="{x:Bind ViewModel.IsEditing, Mode=OneWay}"
+                    IsHitTestVisible="{x:Bind ViewModel.IsEditing, Mode=OneWay}" />
                 <ListView
                     x:Name="EditableItems"
-                    ItemsSource="{Binding Items}"
-                    CanReorderItems="{Binding IsReordering}"
-                    CanDragItems="{Binding IsReordering}"
-                    AllowDrop="{Binding IsReordering}"
+                    ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
+                    CanReorderItems="{x:Bind ViewModel.IsReordering, Mode=OneWay}"
+                    CanDragItems="{x:Bind ViewModel.IsReordering, Mode=OneWay}"
+                    AllowDrop="{x:Bind ViewModel.IsReordering, Mode=OneWay}"
                     SelectionMode="None"
                     IsItemClickEnabled="False"
                     Padding="0"
@@ -90,7 +97,13 @@
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
-                    Visibility="{Binding IsChecklist, Converter={StaticResource Visible}}">
+                    Visibility="{x:Bind ViewModel.IsChecklist, Mode=OneWay, Converter={StaticResource Visible}}">
+                    <ListView.ItemContainerTransitions>
+                        <TransitionCollection>
+                            <AddDeleteThemeTransition />
+                            <ReorderThemeTransition />
+                        </TransitionCollection>
+                    </ListView.ItemContainerTransitions>
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="MinHeight" Value="32" />
@@ -105,24 +118,26 @@
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Loaded="RowLoaded" Unloaded="RowUnloaded">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <!-- 待办与已完成之间的清晰横线分割 -->
+                        <DataTemplate x:DataType="vm:ChecklistItemViewModel">
+                            <Grid
+                                MinHeight="32"
+                                Visibility="{x:Bind IsRowVisible, Mode=OneWay, Converter={StaticResource Visible}}"
+                                Loaded="RowLoaded"
+                                Unloaded="RowUnloaded">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- 待办与已完成之间的清晰横线分割：贴于顶部，不改变行高尺寸，防止重排时抖动 -->
                                 <Border
+                                    Grid.ColumnSpan="3"
                                     Height="1"
                                     Background="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    Margin="4,4,4,4"
-                                    Visibility="{Binding ShowsTopDivider, Converter={StaticResource Visible}}" />
-                                <Grid Grid.Row="1" MinHeight="32">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="28" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                                    VerticalAlignment="Top"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="4,0,4,0"
+                                    Visibility="{x:Bind ShowsTopDivider, Mode=OneWay, Converter={StaticResource Visible}}" />
                                     <!-- 排序手柄 handle：数据驱动仅在开启排序模式时显示，支持列表原生拖拽与点击快捷菜单 -->
                                     <Border
                                         x:Name="DragHandle"
@@ -133,7 +148,7 @@
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Margin="0,0,2,0"
-                                        Visibility="{Binding IsReordering, Converter={StaticResource Visible}}"
+                                        Visibility="{x:Bind IsReordering, Mode=OneWay, Converter={StaticResource Visible}}"
                                         Tapped="OnHandleTapped"
                                         PointerEntered="OnDragHandlePointerEntered"
                                         PointerExited="OnDragHandlePointerExited"
@@ -147,7 +162,7 @@
                                                     <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74B;" /></MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
                                                 <MenuFlyoutSeparator />
-                                                <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{Binding RemoveCommand}" Text="删除此项">
+                                                <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{x:Bind RemoveCommand}" Text="删除此项">
                                                     <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
                                              </MenuFlyout>
@@ -167,11 +182,9 @@
                                         MinHeight="28"
                                         Padding="0"
                                         VerticalAlignment="Top"
-                                        AutomationProperties.Name="{Binding Text}"
-                                        IsChecked="{Binding IsCompleted, Mode=TwoWay}"
-                                        Loaded="CheckBox_Loaded"
-                                        Checked="CheckBox_Checked"
-                                        Unchecked="CheckBox_Unchecked"
+                                        AutomationProperties.Name="{x:Bind Text, Mode=OneWay}"
+                                        IsChecked="{x:Bind IsCompleted, Mode=TwoWay}"
+                                        Opacity="{x:Bind IsCompleted, Mode=OneWay, Converter={StaticResource CompletedOpacity}}"
                                         Tapped="CheckboxTapped" />
                                     <Grid Grid.Column="2" VerticalAlignment="Center" Background="Transparent">
                                         <TextBox
@@ -181,12 +194,15 @@
                                             Loaded="ItemLoaded"
                                             PlaceholderText="添加一项…"
                                             Style="{StaticResource InlineEditor}"
-                                            Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            Opacity="{Binding IsCompleted, Converter={StaticResource CompletedOpacity}}"
+                                            Text="{x:Bind Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            IsReadOnly="{x:Bind IsReadOnly, Mode=OneWay}"
+                                            IsTabStop="{x:Bind IsEditing, Mode=OneWay}"
+                                            IsHitTestVisible="{x:Bind IsEditing, Mode=OneWay}"
+                                            Opacity="{x:Bind IsCompleted, Mode=OneWay, Converter={StaticResource CompletedOpacity}}"
                                             Unloaded="ItemUnloaded">
                                             <TextBox.ContextFlyout>
                                                 <MenuFlyout Opened="OnCardFlyoutOpened">
-                                                    <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{Binding RemoveCommand}" Text="删除此项" />
+                                                    <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{x:Bind RemoveCommand}" Text="删除此项" />
                                                 </MenuFlyout>
                                             </TextBox.ContextFlyout>
                                         </TextBox>
@@ -198,9 +214,8 @@
                                             HorizontalAlignment="Stretch"
                                             Margin="0,0,4,0"
                                             IsHitTestVisible="False"
-                                            Visibility="{Binding IsCompleted, Converter={StaticResource Visible}}" />
+                                            Visibility="{x:Bind IsCompleted, Mode=OneWay, Converter={StaticResource Visible}}" />
                                     </Grid>
-                                </Grid>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
@@ -212,7 +227,8 @@
                         Margin="20,0,0,0"
                         Background="Transparent"
                         BorderThickness="0"
-                        Command="{Binding AddItemCommand}"
+                        Command="{x:Bind ViewModel.AddItemCommand, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsChecklist, Mode=OneWay, Converter={StaticResource Visible}}"
                         Content="＋ 添加一项" />
                     <Grid Padding="0,6,0,0">
                         <Grid.ColumnDefinitions>
@@ -227,11 +243,12 @@
                                 MinWidth="0"
                                 MinHeight="0"
                                 Padding="0"
+                                CornerRadius="4"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding AddTitleCommand}"
-                                ToolTipService.ToolTip="{Binding TitleToggleLabel}"
-                                AutomationProperties.Name="{Binding TitleToggleLabel}">
+                                Command="{x:Bind ViewModel.AddTitleCommand, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.TitleToggleLabel, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ViewModel.TitleToggleLabel, Mode=OneWay}">
                                 <FontIcon Glyph="&#xE8D2;" FontSize="13" />
                             </Button>
                             <Button
@@ -240,28 +257,38 @@
                                 MinWidth="0"
                                 MinHeight="0"
                                 Padding="0"
+                                CornerRadius="4"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ConvertCommand}"
-                                ToolTipService.ToolTip="{Binding ConvertHint}"
-                                AutomationProperties.Name="{Binding ConvertHint}">
+                                Command="{x:Bind ViewModel.ConvertCommand, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.ConvertHint, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ViewModel.ConvertHint, Mode=OneWay}">
                                 <FontIcon Glyph="&#xE73A;" FontSize="13" />
                             </Button>
-                            <Button
+                            <ToggleButton
                                 x:Name="ReorderButton"
                                 Width="30"
                                 Height="30"
                                 MinWidth="0"
                                 MinHeight="0"
                                 Padding="0"
+                                CornerRadius="4"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ToggleReorderCommand}"
-                                ToolTipService.ToolTip="{Binding ReorderToggleLabel}"
-                                AutomationProperties.Name="{Binding ReorderToggleLabel}"
-                                Visibility="{Binding IsChecklist, Converter={StaticResource Visible}}">
-                                <FontIcon x:Name="ReorderIcon" Glyph="&#xE8D4;" FontSize="13" />
-                            </Button>
+                                IsChecked="{x:Bind ViewModel.IsReordering, Mode=TwoWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.ReorderToggleLabel, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ViewModel.ReorderToggleLabel, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.IsChecklist, Mode=OneWay, Converter={StaticResource Visible}}">
+                                <ToggleButton.Resources>
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrush" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent" />
+                                </ToggleButton.Resources>
+                                <FontIcon Glyph="&#xE8CB;" FontSize="13" />
+                            </ToggleButton>
                             <Button
                                 x:Name="DeleteCardButton"
                                 Width="30"
@@ -269,9 +296,10 @@
                                 MinWidth="0"
                                 MinHeight="0"
                                 Padding="0"
+                                CornerRadius="4"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding DeleteCommand}">
+                                Command="{x:Bind ViewModel.DeleteCommand, Mode=OneWay}">
                                 <FontIcon Glyph="&#xE74D;" FontSize="13" />
                             </Button>
                         </StackPanel>
@@ -283,7 +311,7 @@
                             AutomationProperties.AcceleratorKey="Ctrl+Enter"
                             Background="Transparent"
                             BorderThickness="0"
-                            Command="{Binding FinishEditCommand}"
+                            Command="{x:Bind ViewModel.FinishEditCommand, Mode=OneWay}"
                             Content="完成" />
                     </Grid>
                 </StackPanel>
@@ -291,10 +319,3 @@
         </Grid>
     </Grid>
 </UserControl>
-
-
-
-
-
-
-

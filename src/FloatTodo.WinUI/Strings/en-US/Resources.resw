@@ -395,6 +395,9 @@
   <data name="BtnAddMemo" xml:space="preserve">
     <value>New Memo</value>
   </data>
+  <data name="BtnAddMemoOptions" xml:space="preserve">
+    <value>More new memo options</value>
+  </data>
   <data name="MenuAddTextMemo" xml:space="preserve">
     <value>New Note</value>
   </data>

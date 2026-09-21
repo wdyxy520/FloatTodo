@@ -200,4 +200,32 @@ public class MemoViewModelTests
         memo.ConvertCommand.Execute(null);
         Assert.False(memo.IsReordering);
     }
+
+    [Fact]
+    public void NewMemoIsAtomicallyCreatedInEditingState()
+    {
+        var today = new TodayViewModel([]);
+        today.NewTextCommand.Execute(null);
+        Assert.Single(today.Memos);
+        var memo = today.Memos[0];
+        Assert.True(memo.IsEditing);
+        Assert.True(memo.IsEmptyNew);
+    }
+
+    [Fact]
+    public void ConsecutiveAddReusesEmptyNewMemoAndTriggersFeedback()
+    {
+        var today = new TodayViewModel([]);
+        today.NewTextCommand.Execute(null);
+        var memo = today.Memos[0];
+
+        bool feedbackTriggered = false;
+        memo.ReuseFeedbackRequested += () => feedbackTriggered = true;
+
+        today.NewTextCommand.Execute(null);
+
+        Assert.Single(today.Memos);
+        Assert.Same(memo, today.Memos[0]);
+        Assert.True(feedbackTriggered);
+    }
 }
