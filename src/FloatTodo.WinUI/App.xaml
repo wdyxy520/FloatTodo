@@ -1,8 +1,21 @@
 <Application x:Class="FloatTodo.WinUI.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:FloatTodo.WinUI.Views">
  <Application.Resources><ResourceDictionary>
   <ResourceDictionary.MergedDictionaries><XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/></ResourceDictionary.MergedDictionaries>
+  <ResourceDictionary.ThemeDictionaries>
+   <ResourceDictionary x:Key="Light">
+    <SolidColorBrush x:Key="CaptionButtonHoverBackground" Color="#14000000"/>
+    <SolidColorBrush x:Key="CaptionButtonPressedBackground" Color="#24000000"/>
+   </ResourceDictionary>
+   <ResourceDictionary x:Key="Dark">
+    <SolidColorBrush x:Key="CaptionButtonHoverBackground" Color="#1CFFFFFF"/>
+    <SolidColorBrush x:Key="CaptionButtonPressedBackground" Color="#2EFFFFFF"/>
+   </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
   <local:VisibleConverter x:Key="Visible"/>
   <local:CompletedOpacityConverter x:Key="CompletedOpacity"/>
+  <SolidColorBrush x:Key="CaptionCloseHoverBackground" Color="#C42B1C"/>
+  <SolidColorBrush x:Key="CaptionClosePressedBackground" Color="#9E2115"/>
+  <SolidColorBrush x:Key="CaptionCloseHoverForeground" Color="White"/>
   <Style x:Key="PanelSurface" TargetType="Grid">
    <Setter Property="Background" Value="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
    <Setter Property="BorderBrush" Value="{ThemeResource SurfaceStrokeColorDefaultBrush}"/>
@@ -24,6 +37,108 @@
    <Setter Property="FontSize" Value="14"/><Setter Property="TextWrapping" Value="Wrap"/>
    <Setter Property="AcceptsReturn" Value="True"/><Setter Property="VerticalAlignment" Value="Top"/>
    <Setter Property="IsSpellCheckEnabled" Value="False"/>
+  </Style>
+
+  <Style x:Key="CaptionButtonStyle" TargetType="Button">
+   <Setter Property="Width" Value="30"/>
+   <Setter Property="Height" Value="30"/>
+   <Setter Property="MinWidth" Value="0"/>
+   <Setter Property="MinHeight" Value="0"/>
+   <Setter Property="Padding" Value="0"/>
+   <Setter Property="VerticalAlignment" Value="Center"/>
+   <Setter Property="HorizontalAlignment" Value="Center"/>
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="BorderThickness" Value="0"/>
+   <Setter Property="CornerRadius" Value="4"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Button">
+      <ContentPresenter x:Name="ContentPresenter"
+       Background="{TemplateBinding Background}"
+       BorderBrush="{TemplateBinding BorderBrush}"
+       BorderThickness="{TemplateBinding BorderThickness}"
+       CornerRadius="{TemplateBinding CornerRadius}"
+       Content="{TemplateBinding Content}"
+       ContentTemplate="{TemplateBinding ContentTemplate}"
+       Padding="{TemplateBinding Padding}"
+       HorizontalContentAlignment="Center"
+       VerticalContentAlignment="Center">
+       <VisualStateManager.VisualStateGroups>
+        <VisualStateGroup x:Name="CommonStates">
+         <VisualState x:Name="Normal"/>
+         <VisualState x:Name="PointerOver">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Background" Value="{ThemeResource CaptionButtonHoverBackground}"/>
+          </VisualState.Setters>
+         </VisualState>
+         <VisualState x:Name="Pressed">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Background" Value="{ThemeResource CaptionButtonPressedBackground}"/>
+          </VisualState.Setters>
+         </VisualState>
+         <VisualState x:Name="Disabled">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Opacity" Value="0.4"/>
+          </VisualState.Setters>
+         </VisualState>
+        </VisualStateGroup>
+       </VisualStateManager.VisualStateGroups>
+      </ContentPresenter>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+
+  <Style x:Key="CaptionCloseButtonStyle" TargetType="Button">
+   <Setter Property="Width" Value="30"/>
+   <Setter Property="Height" Value="30"/>
+   <Setter Property="MinWidth" Value="0"/>
+   <Setter Property="MinHeight" Value="0"/>
+   <Setter Property="Padding" Value="0"/>
+   <Setter Property="VerticalAlignment" Value="Center"/>
+   <Setter Property="HorizontalAlignment" Value="Center"/>
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="BorderThickness" Value="0"/>
+   <Setter Property="CornerRadius" Value="4"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Button">
+      <ContentPresenter x:Name="ContentPresenter"
+       Background="{TemplateBinding Background}"
+       BorderBrush="{TemplateBinding BorderBrush}"
+       BorderThickness="{TemplateBinding BorderThickness}"
+       CornerRadius="{TemplateBinding CornerRadius}"
+       Content="{TemplateBinding Content}"
+       ContentTemplate="{TemplateBinding ContentTemplate}"
+       Padding="{TemplateBinding Padding}"
+       HorizontalContentAlignment="Center"
+       VerticalContentAlignment="Center">
+       <VisualStateManager.VisualStateGroups>
+        <VisualStateGroup x:Name="CommonStates">
+         <VisualState x:Name="Normal"/>
+         <VisualState x:Name="PointerOver">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Background" Value="{StaticResource CaptionCloseHoverBackground}"/>
+           <Setter Target="ContentPresenter.Foreground" Value="{StaticResource CaptionCloseHoverForeground}"/>
+          </VisualState.Setters>
+         </VisualState>
+         <VisualState x:Name="Pressed">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Background" Value="{StaticResource CaptionClosePressedBackground}"/>
+           <Setter Target="ContentPresenter.Foreground" Value="{StaticResource CaptionCloseHoverForeground}"/>
+          </VisualState.Setters>
+         </VisualState>
+         <VisualState x:Name="Disabled">
+          <VisualState.Setters>
+           <Setter Target="ContentPresenter.Opacity" Value="0.4"/>
+          </VisualState.Setters>
+         </VisualState>
+        </VisualStateGroup>
+       </VisualStateManager.VisualStateGroups>
+      </ContentPresenter>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
   </Style>
  </ResourceDictionary></Application.Resources>
 </Application>

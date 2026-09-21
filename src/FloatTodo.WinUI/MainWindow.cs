@@ -440,6 +440,10 @@ public sealed class MainWindow : Window
             IsChecked = Main.Topmost, VerticalAlignment = VerticalAlignment.Center,
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0)
         };
+        _pin.Resources["ToggleButtonBackgroundPointerOver"] = (Brush)Application.Current.Resources["CaptionButtonHoverBackground"];
+        _pin.Resources["ToggleButtonBackgroundPressed"] = (Brush)Application.Current.Resources["CaptionButtonPressedBackground"];
+        _pin.Resources["ToggleButtonBorderBrushPointerOver"] = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        _pin.Resources["ToggleButtonBorderBrushPressed"] = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         ToolTipService.SetToolTip(_pin, Loc.Get("BtnPin"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_pin, Loc.Get("BtnPin"));
         _pin.Click += (_, _) => Main.Topmost = _pin.IsChecked == true;
@@ -491,62 +495,11 @@ public sealed class MainWindow : Window
         var icon = new FontIcon { Glyph = glyph, FontSize = 12 };
         var button = new Button
         {
-            Content = icon, Width = 30, Height = 30, MinWidth = 0, MinHeight = 0,
-            Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4)
+            Content = icon,
+            Style = (Style)Application.Current.Resources[isClose ? "CaptionCloseButtonStyle" : "CaptionButtonStyle"]
         };
         ToolTipService.SetToolTip(button, label);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, label);
-
-        if (isClose)
-        {
-            button.PointerEntered += (s, e) =>
-            {
-                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 196, 43, 28)); // #C42B1C
-                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            };
-            button.PointerPressed += (s, e) =>
-            {
-                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 33, 21)); // #9E2115
-                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            };
-            button.PointerReleased += (s, e) =>
-            {
-                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 196, 43, 28));
-                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            };
-            button.PointerExited += (s, e) =>
-            {
-                button.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                icon.ClearValue(IconElement.ForegroundProperty);
-            };
-        }
-        else
-        {
-            void ApplyHover(bool isPressed)
-            {
-                var isDark = button.ActualTheme == ElementTheme.Dark;
-                if (isPressed)
-                {
-                    button.Background = isDark
-                        ? new SolidColorBrush(Windows.UI.Color.FromArgb(45, 255, 255, 255))
-                        : new SolidColorBrush(Windows.UI.Color.FromArgb(35, 0, 0, 0));
-                }
-                else
-                {
-                    button.Background = isDark
-                        ? new SolidColorBrush(Windows.UI.Color.FromArgb(28, 255, 255, 255))
-                        : new SolidColorBrush(Windows.UI.Color.FromArgb(20, 0, 0, 0));
-                }
-            }
-
-            button.PointerEntered += (s, e) => ApplyHover(false);
-            button.PointerPressed += (s, e) => ApplyHover(true);
-            button.PointerReleased += (s, e) => ApplyHover(false);
-            button.PointerExited += (s, e) => button.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        }
-
         return button;
     }
 
