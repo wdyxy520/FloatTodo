@@ -426,6 +426,58 @@
                                 AutomationProperties.Name="自动检查更新" />
                         </Grid>
 
+                        <!-- 自动下载更新行 -->
+                        <Grid x:Name="AutoDownloadUpdateRow" MinHeight="36">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="AutoDownloadUpdateCol0" Width="*" />
+                                <ColumnDefinition x:Name="AutoDownloadUpdateCol1" Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                x:Name="AutoDownloadUpdateTitle"
+                                x:Uid="AutoDownloadUpdateTitle"
+                                Text="自动下载更新"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ToggleSwitch
+                                x:Name="AutoDownloadUpdateSwitch"
+                                x:Uid="AutoDownloadUpdateSwitch"
+                                OnContent="已开启"
+                                OffContent="已关闭"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                AutomationProperties.Name="自动下载更新" />
+                        </Grid>
+
+                        <!-- 退出时自动安装更新行 -->
+                        <Grid x:Name="InstallOnExitRow" MinHeight="36">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="InstallOnExitCol0" Width="*" />
+                                <ColumnDefinition x:Name="InstallOnExitCol1" Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                x:Name="InstallOnExitTitle"
+                                x:Uid="InstallOnExitTitle"
+                                Text="退出时自动安装更新"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ToggleSwitch
+                                x:Name="InstallOnExitSwitch"
+                                x:Uid="InstallOnExitSwitch"
+                                OnContent="已开启"
+                                OffContent="已关闭"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                AutomationProperties.Name="退出时自动安装更新" />
+                        </Grid>
+
                         <!-- 语言设置行 -->
                         <Grid x:Name="LanguageRow" MinHeight="36">
                             <Grid.ColumnDefinitions>
@@ -507,26 +559,45 @@
                     FontSize="12"
                     MaxWidth="480">
                     <InfoBar.Content>
-                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-                            <Button
-                                x:Name="DownloadMirrorButton"
-                                x:Uid="DownloadMirrorButton"
-                                Content="国内加速下载"
-                                Style="{StaticResource AccentButtonStyle}"
-                                FontSize="11"
+                        <StackPanel Spacing="6" Margin="0,4,0,0">
+                            <!-- 下载进度指示 -->
+                            <ProgressBar
+                                x:Name="UpdateProgressBar"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="0"
+                                Height="4"
+                                Width="260"
+                                HorizontalAlignment="Left"
                                 Visibility="Collapsed" />
-                            <Button
-                                x:Name="DownloadOfficialButton"
-                                x:Uid="DownloadOfficialButton"
-                                Content="官方下载"
-                                FontSize="11"
-                                Visibility="Collapsed" />
-                            <HyperlinkButton
-                                x:Name="ViewReleaseButton"
-                                x:Uid="ViewReleaseButton"
-                                Content="更新日志"
-                                FontSize="11"
-                                Visibility="Collapsed" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button
+                                    x:Name="RestartUpdateButton"
+                                    x:Uid="UpdateRestartButton"
+                                    Content="立即重启更新"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    FontSize="11"
+                                    Visibility="Collapsed" />
+                                <Button
+                                    x:Name="DownloadMirrorButton"
+                                    x:Uid="DownloadMirrorButton"
+                                    Content="国内加速下载"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    FontSize="11"
+                                    Visibility="Collapsed" />
+                                <Button
+                                    x:Name="DownloadOfficialButton"
+                                    x:Uid="DownloadOfficialButton"
+                                    Content="官方下载"
+                                    FontSize="11"
+                                    Visibility="Collapsed" />
+                                <HyperlinkButton
+                                    x:Name="ViewReleaseButton"
+                                    x:Uid="ViewReleaseButton"
+                                    Content="更新日志"
+                                    FontSize="11"
+                                    Visibility="Collapsed" />
+                            </StackPanel>
                         </StackPanel>
                     </InfoBar.Content>
                 </InfoBar>

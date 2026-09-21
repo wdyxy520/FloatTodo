@@ -401,4 +401,49 @@
   <data name="MenuAddChecklistMemo" xml:space="preserve">
     <value>新建待办清单</value>
   </data>
+  <data name="AutoDownloadUpdateTitle.Text" xml:space="preserve">
+    <value>自动下载更新</value>
+  </data>
+  <data name="AutoDownloadUpdateSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="AutoDownloadUpdateSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="InstallOnExitTitle.Text" xml:space="preserve">
+    <value>退出时自动安装更新</value>
+  </data>
+  <data name="InstallOnExitSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="InstallOnExitSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="TitleBarUpdateReadyToolTip" xml:space="preserve">
+    <value>新版本已准备就绪，点击重启安装</value>
+  </data>
+  <data name="TitleBarUpdateDownloadingToolTip" xml:space="preserve">
+    <value>正在后台下载更新…</value>
+  </data>
+  <data name="UpdateFlyoutTitle" xml:space="preserve">
+    <value>新版本已就绪</value>
+  </data>
+  <data name="UpdateFlyoutDesc" xml:space="preserve">
+    <value>新版本 v{0} 已下载完成，是否立即重启更新？</value>
+  </data>
+  <data name="UpdateFlyoutRestartButton" xml:space="preserve">
+    <value>立即重启更新</value>
+  </data>
+  <data name="UpdateFlyoutLaterButton" xml:space="preserve">
+    <value>稍后</value>
+  </data>
+  <data name="UpdateDownloadingStatus" xml:space="preserve">
+    <value>正在下载更新 ({0}%)…</value>
+  </data>
+  <data name="UpdateReadyStatus" xml:space="preserve">
+    <value>新版本已准备就绪，重启应用即可完成升级</value>
+  </data>
+  <data name="UpdateRestartButton" xml:space="preserve">
+    <value>立即重启更新</value>
+  </data>
 </root>

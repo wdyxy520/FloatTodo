@@ -61,6 +61,8 @@ public sealed class AppearanceSettings
 public sealed class UpdateSettings
 {
     public bool AutoCheckUpdate { get; set; } = true;
+    public bool AutoDownloadUpdate { get; set; } = true;
+    public bool InstallOnExit { get; set; } = true;
 }
 
 public sealed class AppSettings

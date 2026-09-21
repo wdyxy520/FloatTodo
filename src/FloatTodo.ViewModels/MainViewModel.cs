@@ -91,6 +91,30 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    public bool AutoDownloadUpdate
+    {
+        get => Settings.Update.AutoDownloadUpdate;
+        set
+        {
+            if (AutoDownloadUpdate == value) return;
+            Settings.Update.AutoDownloadUpdate = value;
+            OnPropertyChanged();
+            SettingsChanged?.Invoke();
+        }
+    }
+
+    public bool InstallOnExit
+    {
+        get => Settings.Update.InstallOnExit;
+        set
+        {
+            if (InstallOnExit == value) return;
+            Settings.Update.InstallOnExit = value;
+            OnPropertyChanged();
+            SettingsChanged?.Invoke();
+        }
+    }
+
     public string Language
     {
         get => Settings.Language;

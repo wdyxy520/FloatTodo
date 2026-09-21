@@ -70,12 +70,14 @@
                 <ListView
                     x:Name="EditableItems"
                     ItemsSource="{Binding Items}"
-                    CanReorderItems="False"
-                    CanDragItems="False"
-                    AllowDrop="False"
+                    CanReorderItems="True"
+                    CanDragItems="True"
+                    AllowDrop="True"
                     SelectionMode="None"
                     IsItemClickEnabled="False"
                     Padding="0"
+                    DragItemsStarting="EditableItems_DragItemsStarting"
+                    DragItemsCompleted="EditableItems_DragItemsCompleted"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -122,13 +124,7 @@
                                         HorizontalAlignment="Center"
                                         Margin="0,4,2,0"
                                         Visibility="{Binding IsEditing, Converter={StaticResource Visible}}"
-                                        PointerPressed="OnHandlePointerPressed"
-                                        PointerMoved="OnHandlePointerMoved"
-                                        PointerReleased="OnHandlePointerReleased"
-                                        PointerCanceled="OnHandlePointerCanceled"
-                                        PointerCaptureLost="OnHandlePointerCaptureLost"
-                                        PointerEntered="OnHandlePointerEntered"
-                                        PointerExited="OnHandlePointerExited"
+                                        Tapped="OnHandleTapped"
                                         ToolTipService.ToolTip="拖拽排序或点击选项 (Alt+上下键)">
                                         <Border.ContextFlyout>
                                              <MenuFlyout Opened="OnCardFlyoutOpened">

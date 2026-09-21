@@ -21,6 +21,8 @@ public sealed class MainWindow : Window
     private readonly Border _solid = new() { CornerRadius = new(10), IsHitTestVisible = false };
     private Microsoft.UI.Xaml.Controls.Primitives.ToggleButton? _pin;
     private Button? _settingsButton;
+    private Button? _updateButton;
+    private TextBlock? _updateFlyoutDesc;
     private readonly Grid _normalHeader;
     private readonly Grid _settingsHeader;
     private readonly MainPage _normalPage;
@@ -230,6 +232,17 @@ public sealed class MainWindow : Window
                 e.Handled = true;
             }
         };
+        Closed += (_, _) =>
+        {
+            if (Main.InstallOnExit && !string.IsNullOrEmpty(UpdateService.ReadyInstallerPath))
+            {
+                UpdateService.ApplyUpdateOnExit();
+            }
+        };
+        UpdateService.StatusChanged += _ =>
+        {
+            DispatcherQueue.TryEnqueue(UpdateTitleBarUpdateBadge);
+        };
         Activated += async (_, e) =>
         {
             ConfigureToolWindow();
@@ -359,15 +372,73 @@ public sealed class MainWindow : Window
         header.Children.Add(DragHandle);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        var updateBtn = _updateButton = CaptionButton("\uE896", Loc.Get("TitleBarUpdateReadyToolTip"));
+        updateBtn.Visibility = Visibility.Collapsed;
+        if (updateBtn.Content is FontIcon uIcon)
+        {
+            uIcon.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 99, 38));
+        }
+
+        var updateFlyout = new Flyout();
+        var flyoutStack = new StackPanel { Spacing = 8, Width = 230, Padding = new Thickness(4) };
+        var flyoutHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        flyoutHeader.Children.Add(new FontIcon { Glyph = "\uE896", FontSize = 16, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 99, 38)) });
+        flyoutHeader.Children.Add(new TextBlock { Text = Loc.Get("UpdateFlyoutTitle"), FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        flyoutStack.Children.Add(flyoutHeader);
+
+        _updateFlyoutDesc = new TextBlock
+        {
+            Text = Loc.Format("UpdateFlyoutDesc", UpdateService.CachedResult?.LatestVersion ?? ""),
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+        };
+        flyoutStack.Children.Add(_updateFlyoutDesc);
+
+        var flyoutGrid = new Grid { Margin = new Thickness(0, 4, 0, 0), ColumnSpacing = 8 };
+        flyoutGrid.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+        flyoutGrid.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+
+        var restartBtn = new Button
+        {
+            Content = Loc.Get("UpdateFlyoutRestartButton"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Style = (Style)Application.Current.Resources["AccentButtonStyle"],
+            FontSize = 12
+        };
+        restartBtn.Click += (_, _) =>
+        {
+            updateFlyout.Hide();
+            UpdateService.ApplyUpdateAndRestart();
+        };
+        var laterBtn = new Button
+        {
+            Content = Loc.Get("UpdateFlyoutLaterButton"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            FontSize = 12
+        };
+        laterBtn.Click += (_, _) => updateFlyout.Hide();
+
+        Grid.SetColumn(restartBtn, 0);
+        Grid.SetColumn(laterBtn, 1);
+        flyoutGrid.Children.Add(restartBtn);
+        flyoutGrid.Children.Add(laterBtn);
+        flyoutStack.Children.Add(flyoutGrid);
+
+        updateFlyout.Content = flyoutStack;
+        updateBtn.Flyout = updateFlyout;
+
         var settings = _settingsButton = CaptionButton("\uE713", Loc.Get("BtnSettings"));
         settings.Click += (_, _) => NavigateToSettings();
-        var hide = CaptionButton("\uE8BB", Loc.Get("BtnExit"));
+        var hide = CaptionButton("\uE8BB", Loc.Get("BtnExit"), isClose: true);
         hide.Click += (_, _) => Close();
         _pin = new Microsoft.UI.Xaml.Controls.Primitives.ToggleButton
         {
             Content = new FontIcon { Glyph = "\uE718", FontSize = 12 },
             Width = 30, Height = 30, MinWidth = 0, MinHeight = 0, Padding = new Thickness(0),
-            IsChecked = Main.Topmost, VerticalAlignment = VerticalAlignment.Center
+            CornerRadius = new CornerRadius(4),
+            IsChecked = Main.Topmost, VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0)
         };
         ToolTipService.SetToolTip(_pin, Loc.Get("BtnPin"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_pin, Loc.Get("BtnPin"));
@@ -376,6 +447,7 @@ public sealed class MainWindow : Window
         var preview = CaptionButton("\uE890", Loc.Get("BtnPreview"));
         preview.Click += async (_, _) => await EnterPreviewAsync();
         actions.Children.Add(preview);
+        actions.Children.Add(updateBtn);
         actions.Children.Add(settings);
         actions.Children.Add(hide);
         Grid.SetColumn(actions, 2);
@@ -405,7 +477,7 @@ public sealed class MainWindow : Window
         header.Children.Add(SettingsDragHandle);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
-        var hide = CaptionButton("\uE8BB", Loc.Get("BtnExit"));
+        var hide = CaptionButton("\uE8BB", Loc.Get("BtnExit"), isClose: true);
         hide.Click += (_, _) => Close();
         actions.Children.Add(hide);
         Grid.SetColumn(actions, 2);
@@ -414,17 +486,94 @@ public sealed class MainWindow : Window
         return header;
     }
 
-    private static Button CaptionButton(string glyph, string label)
+    private static Button CaptionButton(string glyph, string label, bool isClose = false)
     {
+        var icon = new FontIcon { Glyph = glyph, FontSize = 12 };
         var button = new Button
         {
-            Content = new FontIcon { Glyph = glyph, FontSize = 12 }, Width = 30, Height = 30, MinWidth = 0, MinHeight = 0,
+            Content = icon, Width = 30, Height = 30, MinWidth = 0, MinHeight = 0,
             Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0)
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(4)
         };
         ToolTipService.SetToolTip(button, label);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, label);
+
+        if (isClose)
+        {
+            button.PointerEntered += (s, e) =>
+            {
+                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 196, 43, 28)); // #C42B1C
+                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+            };
+            button.PointerPressed += (s, e) =>
+            {
+                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 33, 21)); // #9E2115
+                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+            };
+            button.PointerReleased += (s, e) =>
+            {
+                button.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 196, 43, 28));
+                icon.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+            };
+            button.PointerExited += (s, e) =>
+            {
+                button.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                icon.ClearValue(IconElement.ForegroundProperty);
+            };
+        }
+        else
+        {
+            void ApplyHover(bool isPressed)
+            {
+                var isDark = button.ActualTheme == ElementTheme.Dark;
+                if (isPressed)
+                {
+                    button.Background = isDark
+                        ? new SolidColorBrush(Windows.UI.Color.FromArgb(45, 255, 255, 255))
+                        : new SolidColorBrush(Windows.UI.Color.FromArgb(35, 0, 0, 0));
+                }
+                else
+                {
+                    button.Background = isDark
+                        ? new SolidColorBrush(Windows.UI.Color.FromArgb(28, 255, 255, 255))
+                        : new SolidColorBrush(Windows.UI.Color.FromArgb(20, 0, 0, 0));
+                }
+            }
+
+            button.PointerEntered += (s, e) => ApplyHover(false);
+            button.PointerPressed += (s, e) => ApplyHover(true);
+            button.PointerReleased += (s, e) => ApplyHover(false);
+            button.PointerExited += (s, e) => button.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        }
+
         return button;
+    }
+
+    private void UpdateTitleBarUpdateBadge()
+    {
+        if (_updateButton is null) return;
+        var isReady = UpdateService.Status == UpdateStatus.ReadyToInstall;
+        var isDownloading = UpdateService.Status == UpdateStatus.Downloading;
+
+        if (isReady)
+        {
+            _updateButton.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(_updateButton, Loc.Get("TitleBarUpdateReadyToolTip"));
+            if (_updateFlyoutDesc is not null)
+            {
+                _updateFlyoutDesc.Text = Loc.Format("UpdateFlyoutDesc", UpdateService.CachedResult?.LatestVersion ?? "");
+            }
+        }
+        else if (isDownloading)
+        {
+            _updateButton.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(_updateButton, Loc.Get("TitleBarUpdateDownloadingToolTip"));
+        }
+        else
+        {
+            _updateButton.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void InitializeShell()
@@ -464,7 +613,13 @@ public sealed class MainWindow : Window
                     {
                         ToolTipService.SetToolTip(_settingsButton, Loc.Format("SettingsUpdateAvailable", result.LatestVersion));
                     }
+                    UpdateTitleBarUpdateBadge();
                 });
+
+                if (Main.AutoDownloadUpdate)
+                {
+                    await Shell.UpdateService.DownloadUpdateAsync(result);
+                }
             }
         });
     }

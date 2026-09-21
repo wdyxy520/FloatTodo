@@ -18,15 +18,6 @@ public sealed partial class MemoCard : UserControl
     private readonly Dictionary<ChecklistItemViewModel, TextBox> _editors = [];
     private ChecklistItemViewModel? _pendingFocusItem;
 
-    private bool _isPointerDown;
-    private bool _isDragging;
-    private Point _dragStartPointerPos;
-    private double _accumulatedPointerY;
-    private ChecklistItemViewModel? _draggedItem;
-    private ListViewItem? _draggedContainer;
-    private CompositeTransform? _dragTransform;
-    private FrameworkElement? _activeHandle;
-
     public MemoCard()
     {
         InitializeComponent();
@@ -274,213 +265,24 @@ public sealed partial class MemoCard : UserControl
         }
     }
 
-    private void OnHandlePointerPressed(object sender, PointerRoutedEventArgs e)
+    private void EditableItems_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
     {
-        if (_vm?.IsEditing != true || _vm.Items.Count <= 1) return;
-        if (sender is not FrameworkElement handle || handle.DataContext is not ChecklistItemViewModel item) return;
-
-        var point = e.GetCurrentPoint(handle);
-        if (!point.Properties.IsLeftButtonPressed) return;
-
-        _activeHandle = handle;
-        _draggedItem = item;
-        _draggedContainer = EditableItems.ContainerFromItem(item) as ListViewItem;
-        if (_draggedContainer is null) return;
-
-        _isPointerDown = true;
-        _isDragging = false;
-        _dragStartPointerPos = e.GetCurrentPoint(EditableItems).Position;
-        _accumulatedPointerY = _dragStartPointerPos.Y;
-
-        handle.CapturePointer(e.Pointer);
-        e.Handled = true;
+        DragContext.ActiveSource = EditableItems;
     }
 
-    private void OnHandlePointerMoved(object sender, PointerRoutedEventArgs e)
+    private void EditableItems_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
     {
-        if (!_isPointerDown || _draggedItem is null || _draggedContainer is null || _vm is null) return;
+        DragContext.ActiveSource = null;
+        _vm?.SyncOrderAfterReorder();
+    }
 
-        var currentPoint = e.GetCurrentPoint(EditableItems).Position;
-        var deltaFromStart = currentPoint.Y - _dragStartPointerPos.Y;
-
-        if (!_isDragging)
+    private void OnHandleTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement handle && handle.ContextFlyout is MenuFlyout flyout)
         {
-            if (Math.Abs(deltaFromStart) > 3)
-            {
-                _isDragging = true;
-                try { ElementCompositionPreview.GetElementVisual(_draggedContainer).ImplicitAnimations = null; } catch { }
-                Canvas.SetZIndex(_draggedContainer, 100);
-                if (_draggedContainer.RenderTransform is not CompositeTransform ct)
-                {
-                    ct = new CompositeTransform();
-                    _draggedContainer.RenderTransform = ct;
-                }
-                _dragTransform = ct;
-                _dragTransform.TranslateX = 0; // 严格锁定 X 轴为 0
-                _dragTransform.TranslateY = deltaFromStart;
-            }
+            flyout.ShowAt(handle);
             e.Handled = true;
-            return;
         }
-
-        var deltaY = currentPoint.Y - _accumulatedPointerY;
-        var currentIndex = _vm.Items.IndexOf(_draggedItem);
-        if (currentIndex < 0) return;
-
-        var currentHeight = _draggedContainer.ActualHeight > 0 ? _draggedContainer.ActualHeight : 32.0;
-
-        // 向下拖拽换位
-        while (deltaY > currentHeight * 0.5 && currentIndex < _vm.Items.Count - 1)
-        {
-            var nextItem = _vm.Items[currentIndex + 1];
-            if (nextItem.IsCompleted != _draggedItem.IsCompleted) break;
-            var targetContainer = EditableItems.ContainerFromItem(nextItem) as ListViewItem;
-            var step = targetContainer?.ActualHeight > 0 ? targetContainer.ActualHeight : currentHeight;
-            _accumulatedPointerY += step;
-            _vm.MoveItem(_draggedItem, 1);
-            currentIndex++;
-            _draggedContainer = EditableItems.ContainerFromItem(_draggedItem) as ListViewItem;
-            if (_draggedContainer is not null)
-            {
-                try { ElementCompositionPreview.GetElementVisual(_draggedContainer).ImplicitAnimations = null; } catch { }
-                Canvas.SetZIndex(_draggedContainer, 100);
-                _draggedContainer.RenderTransform = _dragTransform;
-            }
-            deltaY = currentPoint.Y - _accumulatedPointerY;
-        }
-
-        // 向上拖拽换位
-        while (deltaY < -currentHeight * 0.5 && currentIndex > 0)
-        {
-            var prevItem = _vm.Items[currentIndex - 1];
-            if (prevItem.IsCompleted != _draggedItem.IsCompleted) break;
-            var targetContainer = EditableItems.ContainerFromItem(prevItem) as ListViewItem;
-            var step = targetContainer?.ActualHeight > 0 ? targetContainer.ActualHeight : currentHeight;
-            _accumulatedPointerY -= step;
-            _vm.MoveItem(_draggedItem, -1);
-            currentIndex--;
-            _draggedContainer = EditableItems.ContainerFromItem(_draggedItem) as ListViewItem;
-            if (_draggedContainer is not null)
-            {
-                try { ElementCompositionPreview.GetElementVisual(_draggedContainer).ImplicitAnimations = null; } catch { }
-                Canvas.SetZIndex(_draggedContainer, 100);
-                _draggedContainer.RenderTransform = _dragTransform;
-            }
-            deltaY = currentPoint.Y - _accumulatedPointerY;
-        }
-
-        // 边界阻尼
-        var maxDamp = currentHeight * 0.6;
-        if (deltaY > maxDamp && (currentIndex == _vm.Items.Count - 1 || _vm.Items[currentIndex + 1].IsCompleted != _draggedItem.IsCompleted))
-        {
-            deltaY = maxDamp + (deltaY - maxDamp) * 0.2;
-        }
-        else if (deltaY < -maxDamp && (currentIndex == 0 || _vm.Items[currentIndex - 1].IsCompleted != _draggedItem.IsCompleted))
-        {
-            deltaY = -maxDamp + (deltaY + maxDamp) * 0.2;
-        }
-
-        if (_dragTransform is not null)
-        {
-            _dragTransform.TranslateX = 0;
-            _dragTransform.TranslateY = deltaY;
-        }
-
-        e.Handled = true;
-    }
-
-    private void OnHandlePointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isPointerDown) return;
-        FinishHandleDrag(sender as FrameworkElement, e.Pointer);
-        e.Handled = true;
-    }
-
-    private void OnHandlePointerCanceled(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isPointerDown) return;
-        CancelHandleDrag(sender as FrameworkElement, e.Pointer);
-        e.Handled = true;
-    }
-
-    private void OnHandlePointerCaptureLost(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isPointerDown) return;
-        CancelHandleDrag(sender as FrameworkElement, e.Pointer);
-        e.Handled = true;
-    }
-
-    private void FinishHandleDrag(FrameworkElement? handle, Pointer? pointer)
-    {
-        if (handle is not null && pointer is not null)
-        {
-            try { handle.ReleasePointerCapture(pointer); } catch { }
-        }
-
-        if (_isDragging)
-        {
-            if (_dragTransform is not null)
-            {
-                _dragTransform.TranslateY = 0;
-                _dragTransform.TranslateX = 0;
-            }
-            if (_draggedContainer is not null)
-            {
-                _draggedContainer.RenderTransform = null;
-                Canvas.SetZIndex(_draggedContainer, 0);
-                Animation.ControlTransitions.Attach(_draggedContainer);
-            }
-            _vm?.SyncOrderAfterReorder();
-        }
-        else
-        {
-            if (_draggedContainer is not null)
-            {
-                _draggedContainer.RenderTransform = null;
-                Canvas.SetZIndex(_draggedContainer, 0);
-                Animation.ControlTransitions.Attach(_draggedContainer);
-            }
-            if (handle?.ContextFlyout is MenuFlyout flyout)
-            {
-                flyout.ShowAt(handle);
-            }
-        }
-
-        _isPointerDown = false;
-        _isDragging = false;
-        _draggedItem = null;
-        _draggedContainer = null;
-        _dragTransform = null;
-        _activeHandle = null;
-        try { ProtectedCursor = null; } catch { }
-    }
-
-    private void CancelHandleDrag(FrameworkElement? handle, Pointer? pointer)
-    {
-        if (handle is not null && pointer is not null)
-        {
-            try { handle.ReleasePointerCapture(pointer); } catch { }
-        }
-
-        if (_dragTransform is not null)
-        {
-            _dragTransform.TranslateY = 0;
-            _dragTransform.TranslateX = 0;
-        }
-        if (_draggedContainer is not null)
-        {
-            _draggedContainer.RenderTransform = null;
-            Canvas.SetZIndex(_draggedContainer, 0);
-            Animation.ControlTransitions.Attach(_draggedContainer);
-        }
-
-        _isPointerDown = false;
-        _isDragging = false;
-        _draggedItem = null;
-        _draggedContainer = null;
-        _dragTransform = null;
-        _activeHandle = null;
-        try { ProtectedCursor = null; } catch { }
     }
 
     private void FocusItem(ChecklistItemViewModel? item) => DispatcherQueue.TryEnqueue(() =>
@@ -522,15 +324,6 @@ public sealed partial class MemoCard : UserControl
         }
     });
 
-    private void OnHandlePointerEntered(object sender, PointerRoutedEventArgs e)
-    {
-        try { ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth); } catch { }
-    }
-
-    private void OnHandlePointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isDragging) { try { ProtectedCursor = null; } catch { } }
-    }
 
     private void RowLoaded(object sender, RoutedEventArgs e)
     {

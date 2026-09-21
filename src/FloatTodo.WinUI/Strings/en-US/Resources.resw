@@ -401,4 +401,49 @@
   <data name="MenuAddChecklistMemo" xml:space="preserve">
     <value>New Checklist</value>
   </data>
+  <data name="AutoDownloadUpdateTitle.Text" xml:space="preserve">
+    <value>Auto-Download Updates</value>
+  </data>
+  <data name="AutoDownloadUpdateSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="AutoDownloadUpdateSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="InstallOnExitTitle.Text" xml:space="preserve">
+    <value>Install Update on Exit</value>
+  </data>
+  <data name="InstallOnExitSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="InstallOnExitSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="TitleBarUpdateReadyToolTip" xml:space="preserve">
+    <value>Update is ready. Click to restart and install.</value>
+  </data>
+  <data name="TitleBarUpdateDownloadingToolTip" xml:space="preserve">
+    <value>Downloading update in background…</value>
+  </data>
+  <data name="UpdateFlyoutTitle" xml:space="preserve">
+    <value>Update is Ready</value>
+  </data>
+  <data name="UpdateFlyoutDesc" xml:space="preserve">
+    <value>Version v{0} is ready. Restart now to apply update?</value>
+  </data>
+  <data name="UpdateFlyoutRestartButton" xml:space="preserve">
+    <value>Restart &amp; Update</value>
+  </data>
+  <data name="UpdateFlyoutLaterButton" xml:space="preserve">
+    <value>Later</value>
+  </data>
+  <data name="UpdateDownloadingStatus" xml:space="preserve">
+    <value>Downloading update ({0}%)…</value>
+  </data>
+  <data name="UpdateReadyStatus" xml:space="preserve">
+    <value>Update is ready. Restart to apply update.</value>
+  </data>
+  <data name="UpdateRestartButton" xml:space="preserve">
+    <value>Restart &amp; Update</value>
+  </data>
 </root>

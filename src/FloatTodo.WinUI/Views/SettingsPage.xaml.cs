@@ -44,8 +44,14 @@ public sealed partial class SettingsPage : Page
         AutoHideSwitch.Toggled += OnAutoHideToggled;
         StartupSwitch.Toggled += OnStartupToggled;
         AutoCheckUpdateSwitch.Toggled += OnAutoCheckUpdateToggled;
+        AutoDownloadUpdateSwitch.Toggled += OnAutoDownloadUpdateToggled;
+        InstallOnExitSwitch.Toggled += OnInstallOnExitToggled;
         LanguageComboBox.SelectionChanged += OnLanguageChanged;
         PeekPreviewButton.Click += (_, _) => PeekPreviewRequested?.Invoke();
+        RestartUpdateButton.Click += (_, _) => UpdateService.ApplyUpdateAndRestart();
+
+        UpdateService.DownloadProgressChanged += OnDownloadProgressChanged;
+        UpdateService.StatusChanged += OnUpdateStatusChanged;
 
         LanguageHint.Text = Loc.Get("LanguageRestart");
         VersionText.Text = $"FloatTodo v{UpdateService.GetCurrentVersionString()}";
@@ -76,6 +82,8 @@ public sealed partial class SettingsPage : Page
             AutoHideSwitch.IsOn = _main.AutoHide;
             StartupSwitch.IsOn = StartupService.IsEnabled;
             AutoCheckUpdateSwitch.IsOn = _main.AutoCheckUpdate;
+            AutoDownloadUpdateSwitch.IsOn = _main.AutoDownloadUpdate;
+            InstallOnExitSwitch.IsOn = _main.InstallOnExit;
             LanguageComboBox.SelectedIndex = _main.Language switch
             {
                 "zh-CN" => 1,
@@ -207,6 +215,64 @@ public sealed partial class SettingsPage : Page
         _main.AutoCheckUpdate = AutoCheckUpdateSwitch.IsOn;
     }
 
+    private void OnAutoDownloadUpdateToggled(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing || _main == null) return;
+        _main.AutoDownloadUpdate = AutoDownloadUpdateSwitch.IsOn;
+    }
+
+    private void OnInstallOnExitToggled(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing || _main == null) return;
+        _main.InstallOnExit = InstallOnExitSwitch.IsOn;
+    }
+
+    private void OnDownloadProgressChanged(double progress)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (UpdateService.Status == UpdateStatus.Downloading)
+            {
+                UpdateProgressBar.Visibility = Visibility.Visible;
+                UpdateProgressBar.Value = progress;
+                if (UpdateInfoBar.IsOpen)
+                {
+                    UpdateInfoBar.Message = Loc.Format("UpdateDownloadingStatus", (int)progress);
+                }
+            }
+        });
+    }
+
+    private void OnUpdateStatusChanged(UpdateStatus status)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            switch (status)
+            {
+                case UpdateStatus.Downloading:
+                    UpdateProgressBar.Visibility = Visibility.Visible;
+                    RestartUpdateButton.Visibility = Visibility.Collapsed;
+                    if (UpdateInfoBar.IsOpen)
+                    {
+                        UpdateInfoBar.Message = Loc.Format("UpdateDownloadingStatus", (int)UpdateService.DownloadProgress);
+                    }
+                    break;
+                case UpdateStatus.ReadyToInstall:
+                    UpdateProgressBar.Visibility = Visibility.Collapsed;
+                    RestartUpdateButton.Visibility = Visibility.Visible;
+                    UpdateInfoBar.Severity = InfoBarSeverity.Success;
+                    UpdateInfoBar.Title = Loc.Get("UpdateFlyoutTitle");
+                    UpdateInfoBar.Message = Loc.Get("UpdateReadyStatus");
+                    UpdateInfoBar.IsOpen = true;
+                    break;
+                case UpdateStatus.Failed:
+                case UpdateStatus.Idle:
+                    UpdateProgressBar.Visibility = Visibility.Collapsed;
+                    break;
+            }
+        });
+    }
+
     private void OnLanguageChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_isInitializing || _main == null) return;
@@ -333,7 +399,13 @@ public sealed partial class SettingsPage : Page
         // 5.1 自动检查更新
         SetRowLayout(AutoCheckUpdateTitle, AutoCheckUpdateSwitch, wide);
 
-        // 5.2 语言设置
+        // 5.2 自动下载更新
+        SetRowLayout(AutoDownloadUpdateTitle, AutoDownloadUpdateSwitch, wide);
+
+        // 5.3 退出时自动安装更新
+        SetRowLayout(InstallOnExitTitle, InstallOnExitSwitch, wide);
+
+        // 5.4 语言设置
         SetRowLayout(LanguageLabelPanel, LanguageComboBox, wide, controlWidth: 160);
 
         // 6. 桌面预览不透明度
@@ -465,6 +537,23 @@ public sealed partial class SettingsPage : Page
             UpdateInfoBar.Title = Loc.Format("UpdateNewVersion", result.LatestVersion);
             UpdateInfoBar.Message = string.IsNullOrWhiteSpace(result.Changelog) ? Loc.Get("UpdateChooseDownload") : result.Changelog.Trim();
 
+            if (UpdateService.Status == UpdateStatus.ReadyToInstall)
+            {
+                RestartUpdateButton.Visibility = Visibility.Visible;
+                UpdateProgressBar.Visibility = Visibility.Collapsed;
+            }
+            else if (UpdateService.Status == UpdateStatus.Downloading)
+            {
+                RestartUpdateButton.Visibility = Visibility.Collapsed;
+                UpdateProgressBar.Visibility = Visibility.Visible;
+                UpdateProgressBar.Value = UpdateService.DownloadProgress;
+            }
+            else
+            {
+                RestartUpdateButton.Visibility = Visibility.Collapsed;
+                UpdateProgressBar.Visibility = Visibility.Collapsed;
+            }
+
             DownloadMirrorButton.Visibility = !string.IsNullOrEmpty(result.MirrorDownloadUrl) ? Visibility.Visible : Visibility.Collapsed;
             DownloadMirrorButton.Click -= OnMirrorDownloadClicked;
             DownloadMirrorButton.Click += OnMirrorDownloadClicked;
@@ -486,6 +575,8 @@ public sealed partial class SettingsPage : Page
             UpdateInfoBar.Severity = InfoBarSeverity.Warning;
             UpdateInfoBar.Title = Loc.Get("UpdateConnectFailed");
             UpdateInfoBar.Message = Loc.Get("UpdateConnectError");
+            RestartUpdateButton.Visibility = Visibility.Collapsed;
+            UpdateProgressBar.Visibility = Visibility.Collapsed;
             DownloadMirrorButton.Visibility = Visibility.Collapsed;
             DownloadOfficialButton.Visibility = Visibility.Collapsed;
             ViewReleaseButton.Visibility = Visibility.Visible;
@@ -498,6 +589,8 @@ public sealed partial class SettingsPage : Page
             UpdateInfoBar.Severity = InfoBarSeverity.Informational;
             UpdateInfoBar.Title = Loc.Get("UpdateUpToDate");
             UpdateInfoBar.Message = Loc.Format("UpdateCurrentVersion", result.CurrentVersion);
+            RestartUpdateButton.Visibility = Visibility.Collapsed;
+            UpdateProgressBar.Visibility = Visibility.Collapsed;
             DownloadMirrorButton.Visibility = Visibility.Collapsed;
             DownloadOfficialButton.Visibility = Visibility.Collapsed;
             ViewReleaseButton.Visibility = Visibility.Collapsed;
