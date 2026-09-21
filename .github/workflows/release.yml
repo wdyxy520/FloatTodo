@@ -1,0 +1,60 @@
+name: Release App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $raw = "${{ github.ref_name }}"
+          $version = if ($raw -match '^v?(\d+\.\d+\.\d+.*)$') { $matches[1] } else { "0.2.0" }
+          Write-Host "Releasing version: $version"
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build & Package App
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.get_version.outputs.VERSION }}"
+          ./scripts/publish-winui.ps1 -Installer -Version $ver
+
+      - name: Archive Portable Executable
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.get_version.outputs.VERSION }}"
+          Compress-Archive -Path artifacts/portable/FloatTodo.exe -DestinationPath "artifacts/installer/FloatTodo-Portable-$ver.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            artifacts/installer/FloatTodo-Setup-*.exe
+            artifacts/installer/FloatTodo-Portable-*.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: false

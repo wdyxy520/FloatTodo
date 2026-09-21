@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- XAML x:Uid Keys (SettingsPage) -->
+  <data name="AppearanceHeader.Text" xml:space="preserve">
+    <value>外观与材质</value>
+  </data>
+  <data name="ThemeTitle.Text" xml:space="preserve">
+    <value>外观主题</value>
+  </data>
+  <data name="ThemeSystem.Content" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="ThemeLight.Content" xml:space="preserve">
+    <value>浅色</value>
+  </data>
+  <data name="ThemeDark.Content" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="MaterialTitle.Text" xml:space="preserve">
+    <value>背景材质</value>
+  </data>
+  <data name="MaterialAcrylic.Content" xml:space="preserve">
+    <value>Acrylic 毛玻璃</value>
+  </data>
+  <data name="MaterialSolid.Content" xml:space="preserve">
+    <value>纯色</value>
+  </data>
+  <data name="MaterialHint.Text" xml:space="preserve">
+    <value>Mica 提取壁纸色彩；Acrylic 模糊窗口后方内容；若系统未启用透明效果则回退为纯色。</value>
+  </data>
+  <data name="PreviewHeader.Text" xml:space="preserve">
+    <value>桌面预览</value>
+  </data>
+  <data name="OpacityTitle.Text" xml:space="preserve">
+    <value>桌面预览不透明度</value>
+  </data>
+  <data name="PreviewEffectHint.Text" xml:space="preserve">
+    <value>实时透光预览效果：</value>
+  </data>
+  <data name="WallpaperBadge.Text" xml:space="preserve">
+    <value>模拟桌面壁纸</value>
+  </data>
+  <data name="DesktopIcon1.Text" xml:space="preserve">
+    <value>项目文档</value>
+  </data>
+  <data name="DesktopIcon2.Text" xml:space="preserve">
+    <value>工作日志</value>
+  </data>
+  <data name="DesktopIcon3.Text" xml:space="preserve">
+    <value>图片壁纸</value>
+  </data>
+  <data name="PreviewTitleText.Text" xml:space="preserve">
+    <value>今日便签（桌面预览）</value>
+  </data>
+  <data name="PreviewCheckText.Text" xml:space="preserve">
+    <value>拖动滑块实时观察透光效果</value>
+  </data>
+  <data name="PreviewBulletDesc.Text" xml:space="preserve">
+    <value>壁纸色彩穿透，文字清晰可辨</value>
+  </data>
+  <data name="PeekButtonLabel.Text" xml:space="preserve">
+    <value>试看实际桌面效果</value>
+  </data>
+  <data name="PeekTipText.Text" xml:space="preserve">
+    <value>点击立即在桌面壁纸上试看，单击任意处可返回设置。</value>
+  </data>
+  <data name="BehaviorHeader.Text" xml:space="preserve">
+    <value>窗口与行为</value>
+  </data>
+  <data name="TopmostTitle.Text" xml:space="preserve">
+    <value>保持置顶</value>
+  </data>
+  <data name="TopmostSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="TopmostSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="AutoHideTitle.Text" xml:space="preserve">
+    <value>贴边后自动收起</value>
+  </data>
+  <data name="AutoHideSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="AutoHideSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="StartupTitle.Text" xml:space="preserve">
+    <value>开机启动</value>
+  </data>
+  <data name="StartupSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="StartupSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="AutoCheckUpdateTitle.Text" xml:space="preserve">
+    <value>自动检查更新</value>
+  </data>
+  <data name="AutoCheckUpdateSwitch.OnContent" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="AutoCheckUpdateSwitch.OffContent" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
+  <data name="LanguageTitle.Text" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="CheckUpdateButton.Content" xml:space="preserve">
+    <value>检查更新</value>
+  </data>
+  <data name="DownloadMirrorButton.Content" xml:space="preserve">
+    <value>国内加速下载</value>
+  </data>
+  <data name="DownloadOfficialButton.Content" xml:space="preserve">
+    <value>官方下载</value>
+  </data>
+  <data name="ViewReleaseButton.Content" xml:space="preserve">
+    <value>更新日志</value>
+  </data>
+
+  <!-- XAML x:Uid Keys (MainPage) -->
+  <data name="NewMemoHint.Text" xml:space="preserve">
+    <value>记一条…</value>
+  </data>
+
+  <!-- XAML x:Uid Keys (MemoCard) -->
+  <data name="DeleteMemoMenuItem.Text" xml:space="preserve">
+    <value>删除记事</value>
+  </data>
+  <data name="TitleEditor.PlaceholderText" xml:space="preserve">
+    <value>标题</value>
+  </data>
+  <data name="BodyEditor.PlaceholderText" xml:space="preserve">
+    <value>记一条…</value>
+  </data>
+  <data name="MoveUpMenuItem.Text" xml:space="preserve">
+    <value>上移一行</value>
+  </data>
+  <data name="MoveDownMenuItem.Text" xml:space="preserve">
+    <value>下移一行</value>
+  </data>
+  <data name="DeleteItemMenuItem.Text" xml:space="preserve">
+    <value>删除此项</value>
+  </data>
+  <data name="AddItemButton.Content" xml:space="preserve">
+    <value>＋ 添加一项</value>
+  </data>
+  <data name="DoneButton.Content" xml:space="preserve">
+    <value>完成</value>
+  </data>
+
+  <!-- C# ResourceLoader Keys (no dots) -->
+  <data name="WindowTitle" xml:space="preserve">
+    <value>FloatTodo</value>
+  </data>
+  <data name="DragMainHandle" xml:space="preserve">
+    <value>拖动 FloatTodo 窗口</value>
+  </data>
+  <data name="BtnSettings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="BtnExit" xml:space="preserve">
+    <value>退出 FloatTodo</value>
+  </data>
+  <data name="BtnPin" xml:space="preserve">
+    <value>窗口置顶</value>
+  </data>
+  <data name="BtnPreview" xml:space="preserve">
+    <value>进入桌面预览</value>
+  </data>
+  <data name="BtnBack" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="DragSettingsHandle" xml:space="preserve">
+    <value>拖动设置窗口</value>
+  </data>
+  <data name="HotkeyConflict" xml:space="preserve">
+    <value>Ctrl+Alt+N 已被其他应用占用，可从托盘打开。</value>
+  </data>
+  <data name="SettingsUpdateAvailable" xml:space="preserve">
+    <value>设置 (发现新版本 v{0})</value>
+  </data>
+  <data name="PreviewError" xml:space="preserve">
+    <value>无法启用桌面预览，已恢复正常模式：</value>
+  </data>
+  <data name="TrayOpen" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="TrayExitPreview" xml:space="preserve">
+    <value>退出桌面预览</value>
+  </data>
+  <data name="TrayEnterPreview" xml:space="preserve">
+    <value>进入桌面预览</value>
+  </data>
+  <data name="TrayHide" xml:space="preserve">
+    <value>隐藏</value>
+  </data>
+  <data name="TraySettings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="TrayExit" xml:space="preserve">
+    <value>退出</value>
+  </data>
+  <data name="UpdateNewVersion" xml:space="preserve">
+    <value>发现新版本 v{0}</value>
+  </data>
+  <data name="UpdateChooseDownload" xml:space="preserve">
+    <value>检测到新版本可用，请选择下载方式：</value>
+  </data>
+  <data name="UpdateConnectFailed" xml:space="preserve">
+    <value>检查更新未能连接</value>
+  </data>
+  <data name="UpdateConnectError" xml:space="preserve">
+    <value>无法连接至发布服务，请检查网络或稍后重试。</value>
+  </data>
+  <data name="UpdateUpToDate" xml:space="preserve">
+    <value>已是最新版本</value>
+  </data>
+  <data name="UpdateCurrentVersion" xml:space="preserve">
+    <value>当前版本 (v{0}) 即为最新版。</value>
+  </data>
+  <data name="AppStartupError" xml:space="preserve">
+    <value>FloatTodo — 打开失败</value>
+  </data>
+  <data name="AppCannotReadMemos" xml:space="preserve">
+    <value>无法读取记事。原文件未修改。</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>未能保存，草稿仍保留：</value>
+  </data>
+  <data name="PreviewExitTitle" xml:space="preserve">
+    <value>退出桌面预览</value>
+  </data>
+  <data name="PreviewExitTooltip" xml:space="preserve">
+    <value>退出桌面预览（Ctrl+Alt+N）</value>
+  </data>
+  <data name="PreviewExitName" xml:space="preserve">
+    <value>退出桌面预览</value>
+  </data>
+  <data name="CardNewChecklist" xml:space="preserve">
+    <value>新建清单</value>
+  </data>
+  <data name="CardDragSort" xml:space="preserve">
+    <value>拖拽排序或点击选项 (Alt+上下键)</value>
+  </data>
+  <data name="CardDeleteMemo" xml:space="preserve">
+    <value>删除记事</value>
+  </data>
+  <data name="CardDoneTooltip" xml:space="preserve">
+    <value>完成（Ctrl+Enter）</value>
+  </data>
+  <data name="CardAddItemPlaceholder" xml:space="preserve">
+    <value>添加一项…</value>
+  </data>
+  <data name="VMConvertToText" xml:space="preserve">
+    <value>转为文本</value>
+  </data>
+  <data name="VMConvertToChecklist" xml:space="preserve">
+    <value>转为清单</value>
+  </data>
+  <data name="VMHideTitle" xml:space="preserve">
+    <value>隐藏标题</value>
+  </data>
+  <data name="VMShowTitle" xml:space="preserve">
+    <value>显示标题</value>
+  </data>
+  <data name="LanguageRestart" xml:space="preserve">
+    <value>重启应用后生效</value>
+  </data>
+  <data name="InvalidVersionFormat" xml:space="preserve">
+    <value>未能识别的版本号格式</value>
+  </data>
+  <data name="BtnAddMemo" xml:space="preserve">
+    <value>新建记事</value>
+  </data>
+  <data name="MenuAddTextMemo" xml:space="preserve">
+    <value>新建便签</value>
+  </data>
+  <data name="MenuAddChecklistMemo" xml:space="preserve">
+    <value>新建待办清单</value>
+  </data>
+</root>

@@ -1,0 +1,276 @@
+<UserControl
+    x:Class="FloatTodo.WinUI.Views.MemoCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+        <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+        <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="Transparent" />
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackground" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent" />
+    </UserControl.Resources>
+    <Grid
+        x:Name="Card"
+        PreviewKeyDown="OnEditorPreviewKeyDown">
+        <Grid.ContextFlyout>
+            <MenuFlyout Opened="OnCardFlyoutOpened">
+                <MenuFlyoutItem Command="{Binding ConvertCommand}" Text="{Binding ConvertHint}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE73A;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Command="{Binding AddTitleCommand}" Text="{Binding TitleToggleLabel}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE8D2;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem x:Uid="DeleteMemoMenuItem" Command="{Binding DeleteCommand}" Text="删除记事">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE74D;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+            </MenuFlyout>
+        </Grid.ContextFlyout>
+        <Border
+            x:Name="CardSurface"
+            Background="{ThemeResource SolidBackgroundFillColorQuarternaryBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="10"
+            IsHitTestVisible="False" />
+        <Grid Margin="13,9">
+            <StackPanel
+                x:Name="Editor"
+                Background="Transparent"
+                IsTabStop="True"
+                KeyDown="OnPreviewKeyDown">
+                <TextBox
+                    x:Name="TitleEditor"
+                    x:Uid="TitleEditor"
+                    AcceptsReturn="False"
+                    FontWeight="SemiBold"
+                    PlaceholderText="标题"
+                    Style="{StaticResource InlineEditor}"
+                    Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Visibility="{Binding ShowTitle, Converter={StaticResource Visible}}" />
+                <TextBox
+                    x:Name="BodyEditor"
+                    x:Uid="BodyEditor"
+                    PlaceholderText="记一条…"
+                    Style="{StaticResource InlineEditor}"
+                    Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Visibility="{Binding IsChecklist, Converter={StaticResource Visible}, ConverterParameter=Invert}" />
+                <ListView
+                    x:Name="EditableItems"
+                    ItemsSource="{Binding Items}"
+                    CanReorderItems="False"
+                    CanDragItems="False"
+                    AllowDrop="False"
+                    SelectionMode="None"
+                    IsItemClickEnabled="False"
+                    Padding="0"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                    ScrollViewer.VerticalScrollMode="Disabled"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ScrollViewer.HorizontalScrollMode="Disabled"
+                    Visibility="{Binding IsChecklist, Converter={StaticResource Visible}}">
+                    <ListView.ItemContainerTransitions>
+                        <TransitionCollection />
+                    </ListView.ItemContainerTransitions>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="MinHeight" Value="32" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Loaded="RowLoaded" Unloaded="RowUnloaded">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <!-- 待办与已完成之间的清晰横线分割 -->
+                                <Border
+                                    Height="1"
+                                    Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    Margin="4,4,4,4"
+                                    Visibility="{Binding ShowsTopDivider, Converter={StaticResource Visible}}" />
+                                <Grid Grid.Row="1" MinHeight="32">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- 排序手柄 handle：顶部对齐，规范矢量垂直三点，数据驱动仅在编辑态显示，支持列表原生拖拽与点击快捷菜单 -->
+                                    <Border
+                                        x:Name="DragHandle"
+                                        Width="18"
+                                        Height="24"
+                                        Background="Transparent"
+                                        VerticalAlignment="Top"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,4,2,0"
+                                        Visibility="{Binding IsEditing, Converter={StaticResource Visible}}"
+                                        PointerPressed="OnHandlePointerPressed"
+                                        PointerMoved="OnHandlePointerMoved"
+                                        PointerReleased="OnHandlePointerReleased"
+                                        PointerCanceled="OnHandlePointerCanceled"
+                                        PointerCaptureLost="OnHandlePointerCaptureLost"
+                                        PointerEntered="OnHandlePointerEntered"
+                                        PointerExited="OnHandlePointerExited"
+                                        ToolTipService.ToolTip="拖拽排序或点击选项 (Alt+上下键)">
+                                        <Border.ContextFlyout>
+                                             <MenuFlyout Opened="OnCardFlyoutOpened">
+                                                <MenuFlyoutItem x:Uid="MoveUpMenuItem" Text="上移一行" Click="MoveUp_Click">
+                                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74A;" /></MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutItem x:Uid="MoveDownMenuItem" Text="下移一行" Click="MoveDown_Click">
+                                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74B;" /></MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutSeparator />
+                                                <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{Binding RemoveCommand}" Text="删除此项">
+                                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Border.ContextFlyout>
+                                        <PathIcon
+                                            Data="M 3,1 A 1.5,1.5 0 1,1 3,4 A 1.5,1.5 0 1,1 3,1 M 3,7 A 1.5,1.5 0 1,1 3,10 A 1.5,1.5 0 1,1 3,7 M 3,13 A 1.5,1.5 0 1,1 3,16 A 1.5,1.5 0 1,1 3,13"
+                                            Width="8"
+                                            Height="16"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </Border>
+                                    <CheckBox
+                                        x:Name="ItemCheckBox"
+                                        Grid.Column="1"
+                                        MinWidth="0"
+                                        MinHeight="28"
+                                        Padding="0"
+                                        VerticalAlignment="Top"
+                                        AutomationProperties.Name="{Binding Text}"
+                                        IsChecked="{Binding IsCompleted, Mode=TwoWay}"
+                                        Loaded="CheckBox_Loaded"
+                                        Checked="CheckBox_Checked"
+                                        Unchecked="CheckBox_Unchecked"
+                                        Tapped="CheckboxTapped" />
+                                    <Grid Grid.Column="2" VerticalAlignment="Center" Background="Transparent">
+                                        <TextBox
+                                            x:Name="ItemBox"
+                                            KeyDown="ItemKeyDown"
+                                            Loaded="ItemLoaded"
+                                            PlaceholderText="添加一项…"
+                                            Style="{StaticResource InlineEditor}"
+                                            Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Opacity="{Binding IsCompleted, Converter={StaticResource CompletedOpacity}}"
+                                            Unloaded="ItemUnloaded">
+                                            <TextBox.ContextFlyout>
+                                                <MenuFlyout Opened="OnCardFlyoutOpened">
+                                                    <MenuFlyoutItem x:Uid="DeleteItemMenuItem" Command="{Binding RemoveCommand}" Text="删除此项" />
+                                                </MenuFlyout>
+                                            </TextBox.ContextFlyout>
+                                        </TextBox>
+                                        <!-- 删除线：位于 TextBox 文字中心，穿透交互直接聚焦 TextBox，仅在完成时显示 -->
+                                        <Border
+                                            Height="1"
+                                            Background="{ThemeResource TextFillColorSecondaryBrush}"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="0,0,4,0"
+                                            IsHitTestVisible="False"
+                                            Visibility="{Binding IsCompleted, Converter={StaticResource Visible}}" />
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <StackPanel x:Name="EditorActions">
+                    <Button
+                        x:Name="AddItemButton"
+                        x:Uid="AddItemButton"
+                        Margin="20,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding AddItemCommand}"
+                        Content="＋ 添加一项" />
+                    <Grid Padding="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <!-- 常用功能平铺展开为图标按钮 -->
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Button
+                                Width="30"
+                                Height="30"
+                                MinWidth="0"
+                                MinHeight="0"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding AddTitleCommand}"
+                                ToolTipService.ToolTip="{Binding TitleToggleLabel}"
+                                AutomationProperties.Name="{Binding TitleToggleLabel}">
+                                <FontIcon Glyph="&#xE8D2;" FontSize="13" />
+                            </Button>
+                            <Button
+                                Width="30"
+                                Height="30"
+                                MinWidth="0"
+                                MinHeight="0"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding ConvertCommand}"
+                                ToolTipService.ToolTip="{Binding ConvertHint}"
+                                AutomationProperties.Name="{Binding ConvertHint}">
+                                <FontIcon Glyph="&#xE73A;" FontSize="13" />
+                            </Button>
+                            <Button
+                                x:Name="DeleteCardButton"
+                                Width="30"
+                                Height="30"
+                                MinWidth="0"
+                                MinHeight="0"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding DeleteCommand}">
+                                <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                            </Button>
+                        </StackPanel>
+                        <!-- 完成按钮 -->
+                        <Button
+                            x:Name="DoneButton"
+                            x:Uid="DoneButton"
+                            Grid.Column="1"
+                            AutomationProperties.AcceleratorKey="Ctrl+Enter"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding FinishEditCommand}"
+                            Content="完成" />
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
+
+
+
+
+
+
+

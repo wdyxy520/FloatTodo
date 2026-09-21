@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FloatTodo.Core/FloatTodo.Core.csproj" />
+    <Project Path="src/FloatTodo.ViewModels/FloatTodo.ViewModels.csproj" />
+    <Project Path="src/FloatTodo.WinUI/FloatTodo.WinUI.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FloatTodo.Core.Tests/FloatTodo.Core.Tests.csproj" />
+  </Folder>
+</Solution>
