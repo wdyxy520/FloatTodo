@@ -41,7 +41,6 @@ public sealed partial class MemoCard : UserControl
     {
         InitializeComponent();
         _editTransition = new(EditorActions);
-        EditorActions.SizeChanged += (_, e) => EditorActions.Clip = new Microsoft.UI.Xaml.Media.RectangleGeometry { Rect = new(0, 0, e.NewSize.Width, e.NewSize.Height) };
         DataContextChanged += (_, _) => Attach();
         Unloaded += (_, _) => { _editTransition.Stop(); Detach(); };
         Loaded += (_, _) => Attach();

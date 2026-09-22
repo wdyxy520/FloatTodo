@@ -1,13 +1,18 @@
 using Microsoft.UI.Xaml.Hosting;
+using System.Runtime.CompilerServices;
 using Windows.UI.ViewManagement;
 
 namespace FloatTodo.WinUI.Animation;
 
 internal static class ControlTransitions
 {
+    private static readonly ConditionalWeakTable<FrameworkElement, object> Attached = new();
     // Keep text and surfaces opaque and stable. Animate only layout displacement.
     public static void Attach(FrameworkElement element)
     {
+        if (Attached.TryGetValue(element, out _)) return;
+        Attached.Add(element, new object());
+
         void Apply()
         {
             try
@@ -29,14 +34,8 @@ internal static class ControlTransitions
             }
         }
 
-        if (element.IsLoaded)
-        {
-            Apply();
-        }
-        else
-        {
-            element.Loaded += (_, _) => Apply();
-        }
+        element.Loaded += (_, _) => Apply();
+        if (element.IsLoaded) Apply();
         element.Unloaded += (_, _) =>
         {
             try { ElementCompositionPreview.GetElementVisual(element).ImplicitAnimations = null; } catch { }
