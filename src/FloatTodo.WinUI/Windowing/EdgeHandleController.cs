@@ -8,9 +8,10 @@ internal sealed class EdgeHandleController : IDisposable
     public nint Handle { get; }
     private readonly WindowMessageHook _hook;
     public event Action? Hovered;
+    public bool IsVisible { get; private set; }
     public EdgeHandleController()
     {
-        Handle = NativeMethods.CreateWindowEx(0x08000080, "STATIC", "FloatTodo Edge", 0x80000000 | 0x00000107, 0, 0, 6, 200, 0, 0, 0, 0);
+        Handle = NativeMethods.CreateWindowEx(0x08000080, "STATIC", "FloatTodo Edge", 0x80000000 | 0x00000107, -100, -100, 6, 200, 0, 0, 0, 0);
         if (Handle == 0) throw new InvalidOperationException("无法创建边缘把手");
         _hook = new(Handle); _hook.Message += (msg, _, _) => { if (msg == 0x200) Hovered?.Invoke(); };
     }
@@ -26,8 +27,18 @@ internal sealed class EdgeHandleController : IDisposable
         {
             NativeMethods.SetWindowPos(Handle, -1, side == DockSide.Left ? main.Left : main.Right - thickness, main.Top, thickness, main.Height, 0x50);
         }
+        IsVisible = true;
     }
-    public void Hide() => NativeMethods.ShowWindow(Handle, 0);
-    public bool Contains(int x, int y) { NativeMethods.GetWindowRect(Handle, out var r); return x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom; }
+    public void Hide()
+    {
+        NativeMethods.ShowWindow(Handle, 0);
+        IsVisible = false;
+    }
+    public bool Contains(int x, int y)
+    {
+        if (!IsVisible) return false;
+        NativeMethods.GetWindowRect(Handle, out var r);
+        return x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom;
+    }
     public void Dispose() { _hook.Dispose(); NativeMethods.DestroyWindow(Handle); }
 }

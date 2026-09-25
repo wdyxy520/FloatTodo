@@ -85,7 +85,13 @@ internal sealed class DockController : IDisposable
         if (_disposed) return;
         if (request.Visible)
         {
-            if (_hidden) { _placement.Place(Side); _animation.SetHidden(Side); _window.AppWindow.Show(false); _hidden = false; }
+            if (_hidden)
+            {
+                _placement.Place(Side);
+                _animation.SetHidden(Side);
+                _window.ApplyTopmost(showWithoutActivation: true);
+                _hidden = false;
+            }
             // Keep the hit-testable edge until the main window has submitted its next XAML frame.
             EventHandler<object>? firstFrame = null;
             firstFrame = (_, _) => { CompositionTarget.Rendering -= firstFrame; if (!_disposed && _session.DesiredVisible) _edge.Hide(); };

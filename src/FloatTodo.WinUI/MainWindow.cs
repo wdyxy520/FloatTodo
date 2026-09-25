@@ -48,6 +48,26 @@ public sealed class MainWindow : Window
     public void ShowPanel() { ExitPreview(); _dock?.Show(true); }
     public void SaveSettings() => _settingsStore.SaveSettingsDebounced(Settings);
 
+    public bool ShouldBeTopmost => IsPreviewMode || Main.Topmost;
+
+    public void ApplyTopmost(bool showWithoutActivation = false)
+    {
+        var shouldBeTopmost = ShouldBeTopmost;
+        if (AppWindow.Presenter is OverlappedPresenter p && p.IsAlwaysOnTop != shouldBeTopmost)
+        {
+            p.IsAlwaysOnTop = shouldBeTopmost;
+        }
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        if (hwnd != 0)
+        {
+            var insertAfter = shouldBeTopmost ? (nint)(-1) : (nint)(-2);
+            uint flags = 0x0001 | 0x0002 | 0x0010; // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
+            if (showWithoutActivation) flags |= 0x0040; // SWP_SHOWWINDOW
+            NativeMethods.SetWindowPos(hwnd, insertAfter, 0, 0, 0, 0, flags);
+        }
+    }
+
     private async Task EnterPreviewAsync(bool fromSettings = false)
     {
         if (IsPreviewMode || IsDialogOpen) return;
@@ -58,7 +78,7 @@ public sealed class MainWindow : Window
         IsPreviewMode = true;
         PanelRoot.IsHitTestVisible = false;
         _dock?.SuspendForPreview();
-        if (AppWindow.Presenter is OverlappedPresenter p) p.IsAlwaysOnTop = true;
+        ApplyTopmost();
         try
         {
             await FadeHostAsync(0, 100);
@@ -84,7 +104,7 @@ public sealed class MainWindow : Window
         _previewInput?.Disable(); // Restore input before changing the visible page.
         IsPreviewMode = false;
         SetPreviewLayout(false);
-        if (AppWindow.Presenter is OverlappedPresenter p) p.IsAlwaysOnTop = Main.Topmost;
+        ApplyTopmost();
         _dock?.ResumeFromPreview();
         _ = FadeHostAsync(1, 160);
         ConfigureInputRegions();
@@ -178,7 +198,7 @@ public sealed class MainWindow : Window
         {
             ApplyAppearance();
             if (_pin is not null) _pin.IsChecked = Main.Topmost;
-            if (AppWindow.Presenter is OverlappedPresenter p) p.IsAlwaysOnTop = IsPreviewMode || Main.Topmost;
+            ApplyTopmost();
             SaveSettings();
         };
         PanelRoot.Style = (Style)Application.Current.Resources["PanelSurface"];
@@ -220,7 +240,7 @@ public sealed class MainWindow : Window
         };
         AppWindow.Changed += (_, _) => { if (IsPreviewMode) _previewInput?.Position(); };
         AppWindow.Resize(new Windows.Graphics.SizeInt32((int)Settings.Window.Width, (int)Settings.Window.Height));
-        if (AppWindow.Presenter is OverlappedPresenter topmost) topmost.IsAlwaysOnTop = Main.Topmost;
+        ApplyTopmost();
         SystemBackdrop = new TransparentWindowBackdrop(WinRT.Interop.WindowNative.GetWindowHandle(this));
         ConfigureToolWindow();
         ApplyAppearance();
@@ -636,6 +656,7 @@ public sealed class MainWindow : Window
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         ConfigureInputRegions();
         _dock = new(this, hwnd);
+        ApplyTopmost();
         _tray = new(hwnd);
         _tray.OpenRequested += ShowPanel;
         _tray.HideRequested += () => { ExitPreview(); _dock.Hide(); };
